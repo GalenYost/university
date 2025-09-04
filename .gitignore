@@ -1,0 +1,4 @@
+.tools
+*.lock
+bin/
+obj/
