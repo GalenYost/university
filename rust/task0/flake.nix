@@ -11,11 +11,10 @@
       devShells.x86_64-linux.default = pkgs.mkShell {
          buildInputs = [
             pkgs.cargo
-            pkgs.rustup
             pkgs.rust-analyzer
          ];
          shellHook = ''
-            export PS1='rs-dev \W\$ '
+            export PS1='rs \W \$ '
             export PATH="$HOME/.cargo/bin:$PATH"
             export RUSTFLAGS="-A dead_code"
          '';
