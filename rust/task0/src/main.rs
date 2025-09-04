@@ -2,6 +2,7 @@
 struct Student<'a> {
     name: &'a str,
     surname: &'a str,
+    address: &'a str,
     rating: u64,
 }
 
@@ -37,6 +38,7 @@ impl<'b> Group <'b> {
             println!(" Student #{}: ", i);
             println!("   Name - {}", student.name);
             println!("   Surname - {}", student.surname);
+            println!("   Address - {}", student.address);
             println!("   Rating - {}", student.rating);
             println!("----------------------------");
         }
@@ -54,6 +56,7 @@ impl<'b> Group <'b> {
                 println!("Student info: ");
                 println!("Name - {}", s.name);
                 println!("Surname - {}", s.surname);
+                println!("Address - {}", s.address);
                 println!("Rating - {}", s.rating);
             },
             _ => println!("Not found"),
@@ -70,17 +73,20 @@ fn main() {
     group1.add(Student {
         name: "a",
         surname: "a",
-        rating: 95
+        address: "1234",
+        rating: 95,
     });
     group1.add(Student {
         name: "b",
         surname: "b",
-        rating: 94
+        address: "12345",
+        rating: 94,
     });
     group1.add(Student {
         name: "c",
         surname: "c",
-        rating: 72
+        address: "123456",
+        rating: 72,
     });
 
     println!("--------------- GROUP ---------------");
@@ -102,6 +108,7 @@ mod tests {
         group1.add(Student {
             name: "a",
             surname: "a",
+            address: "123456",
             rating: 95
         });
 
@@ -110,6 +117,7 @@ mod tests {
             Student {
                 name: "a",
                 surname: "a",
+                address: "123456",
                 rating: 95,
             }
         );
@@ -117,6 +125,7 @@ mod tests {
         group1.add(Student {
             name: "b",
             surname: "b",
+            address: "123456",
             rating: 94
         });
 
@@ -125,6 +134,7 @@ mod tests {
             Student {
                 name: "a",
                 surname: "a",
+                address: "123456",
                 rating: 95,
             }
         );
@@ -152,11 +162,13 @@ mod tests {
         group1.add(Student {
             name: "a",
             surname: "a",
+            address: "123456",
             rating: 95
         });
         group1.add(Student {
             name: "b",
             surname: "b",
+            address: "123456",
             rating: 94
         });
 
