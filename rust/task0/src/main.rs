@@ -4,12 +4,12 @@ pub mod tests;
 pub mod input;
 pub mod student;
 
-use std::process;
 use std::cell::RefCell;
+use std::process;
 use std::rc::Rc;
 
-use student::{prompt_group_code, prompt_search_criteria, prompt_student_info, Group, Student};
 use input::InputBuffer;
+use student::{Group, Student, prompt_group_code, prompt_search_criteria, prompt_student_info};
 
 fn main() {
     let mut input_buffer = InputBuffer::new();
@@ -116,6 +116,9 @@ fn main() {
     loop {
         println!("\nOptions:");
         input_buffer.prompt();
-        input_buffer.read_input_and_call("Choice: ").map_err(|e| println!("{}", e)).ok();
+        input_buffer
+            .read_input_and_call("Choice: ")
+            .map_err(|e| println!("{}", e))
+            .ok();
     }
 }

@@ -1,4 +1,6 @@
-use crate::input::{handle_value_cast_number, handle_value_cast_string, read_input_and_cast_value, InputType, InputValue};
+use crate::input::{
+    InputType, handle_value_cast_number, handle_value_cast_string, read_input_and_cast_value,
+};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Student {
@@ -57,7 +59,7 @@ impl Group {
     pub fn new(code: &str) -> Self {
         Self {
             code: code.into(),
-            students: Vec::new()
+            students: Vec::new(),
         }
     }
 
@@ -76,7 +78,9 @@ impl Group {
             SearchCriteria::Surname(surname) => self.students.retain(|s| s.surname != surname),
             SearchCriteria::Address(address) => self.students.retain(|s| s.address != address),
             SearchCriteria::Rating(rating) => self.students.retain(|s| s.rating != rating),
-            SearchCriteria::Index(idx) => { self.students.remove(idx); },
+            SearchCriteria::Index(idx) => {
+                self.students.remove(idx);
+            }
         };
         self
     }
@@ -118,7 +122,7 @@ impl Group {
                 println!("  Address - {}", s.address);
                 println!("  Rating - {}", s.rating);
                 println!("----------------------------------");
-            },
+            }
             _ => println!("Student not found"),
         };
     }
@@ -154,30 +158,30 @@ pub fn prompt_search_criteria() -> SearchCriteria {
             let name = read_input_and_cast_value("Student name: ", InputType::Text);
             let name = handle_value_cast_string(name);
             SearchCriteria::Name(name.into())
-        },
+        }
         "surname" => {
             let surname = read_input_and_cast_value("Student surname: ", InputType::Text);
             let surname = handle_value_cast_string(surname);
             SearchCriteria::Surname(surname.into())
-        },
+        }
         "address" => {
             let address = read_input_and_cast_value("Student address: ", InputType::Text);
             let address = handle_value_cast_string(address);
             SearchCriteria::Address(address.into())
-        },
+        }
         "rating" => {
             let rating = read_input_and_cast_value("Student rating: ", InputType::Number);
             let rating = handle_value_cast_number(rating);
             SearchCriteria::Rating(rating.into())
-        },
+        }
         "index" => {
             let index = read_input_and_cast_value("Index: ", InputType::Number);
             let index = handle_value_cast_number(index);
             SearchCriteria::Index(index.into())
-        },
+        }
         _ => {
             println!("no such option");
             SearchCriteria::Name("".into())
-        },
+        }
     }
 }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use super::super::*;
     #[test]
     fn adding_students() {
         let mut group1 = Group::new("1-2-3");
@@ -13,7 +13,7 @@ mod tests {
     #[should_panic]
     fn remove_panic() {
         let mut group1 = Group::new("1-2-3");
-        let removed = group1.remove(SearchCriteria::Index(0));
+        let removed = group1.remove(student::SearchCriteria::Index(0));
         println!("{:?}", removed);
     }
 
@@ -26,6 +26,6 @@ mod tests {
 
         group1.add(s1).add(s2);
 
-        group1.remove(SearchCriteria::Name("a".into()));
+        group1.remove(student::SearchCriteria::Name("a".into()));
     }
 }
