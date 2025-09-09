@@ -1,5 +1,5 @@
 .tools
 *.lock
-bin/
-obj/
-target/
+/bin/
+/obj/
+/target/
