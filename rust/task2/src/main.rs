@@ -1,334 +1,247 @@
-#[cfg(test)]
-pub mod tests;
+use std::collections::LinkedList;
 
 pub mod input;
-pub mod iter;
-pub mod list;
-pub mod student;
-
 use input::*;
-use list::*;
-use student::*;
 
-use std::process;
-use std::sync::{Arc, Mutex};
+fn remove_nth(list: &mut LinkedList<String>, n: usize) -> Option<String> {
+    if n >= list.len() {
+        return None;
+    }
+    let mut split = list.split_off(n);
+    let result = split.pop_front();
+    list.append(&mut split);
+    result
+}
 
 fn main() {
-    let lists = Arc::new(Mutex::new(Vec::<List>::new()));
-
-    let lists_for_adding = Arc::clone(&lists);
-    let add_first = move || {
-        let mut locked = lists_for_adding.lock().unwrap();
-        if locked.is_empty() {
-            let info = prompt_student_info();
-            let student = Student::new(&info.0, &info.1, &info.2, &info.3).rating(info.4);
-            locked.push(List::new(student));
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let info = prompt_student_info();
-                let student = Student::new(&info.0, &info.1, &info.2, &info.3).rating(info.4);
-                list.insert_first(student.clone());
-            }
-        }
-    };
-
-    let lists_to_create = Arc::clone(&lists);
-    let create_list = move || {
-        let mut locked = lists_to_create.lock().unwrap();
-        let info = prompt_student_info();
-        let student = Student::new(&info.0, &info.1, &info.2, &info.3).rating(info.4);
-        locked.push(List::new(student));
-    };
-
-    let lists_to_remove = Arc::clone(&lists);
-    let remove_list = move || {
-        let mut locked = lists_to_remove.lock().unwrap();
-        if locked.is_empty() {
-            let info = prompt_student_info();
-            let student = Student::new(&info.0, &info.1, &info.2, &info.3).rating(info.4);
-            locked.push(List::new(student));
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if locked.len() < list_idx {
-                locked.remove(list_idx);
-            } else {
-                println!("index out of bounds");
-            }
-        }
-    };
-
-    let lists_to_insert_last = Arc::clone(&lists);
-    let insert_last = move || {
-        let mut locked = lists_to_insert_last.lock().unwrap();
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let info = prompt_student_info();
-                let student = Student::new(&info.0, &info.1, &info.2, &info.3).rating(info.4);
-                list.insert_last(student.clone());
-            }
-        }
-    };
-
-    let lists_to_print = Arc::clone(&lists);
-    let print_lists = move || {
-        lists_to_print
-            .lock()
-            .unwrap()
-            .iter()
-            .for_each(|list| println!("list: {:?}", list));
-    };
-
-    let lists_to_insert_after_n = Arc::clone(&lists);
-    let insert_after_n = move || {
-        let mut locked = lists_to_insert_after_n.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let el_to_insert = prompt_student_info();
-                let el_to_insert = Student::new(
-                    &el_to_insert.0,
-                    &el_to_insert.1,
-                    &el_to_insert.2,
-                    &el_to_insert.3,
-                )
-                .rating(el_to_insert.4);
-
-                let insert_after = read_input_and_cast_value("n: ", InputType::Number);
-                let insert_after = handle_value_cast_number(insert_after);
-
-                list.insert_value_after_n(el_to_insert, insert_after);
-            }
-        }
-    };
-
-    let lists_to_move_after_n = Arc::clone(&lists);
-    let move_after_n = move || {
-        let mut locked = lists_to_move_after_n.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let el_to_move = read_input_and_cast_value("element index: ", InputType::Number);
-                let el_to_move = handle_value_cast_number(el_to_move);
-
-                let move_for = read_input_and_cast_value("for n: ", InputType::Number);
-                let move_for = handle_value_cast_number(move_for);
-
-                list.move_for_n(el_to_move, move_for);
-            }
-        }
-    };
-
-    let lists_to_remove_n = Arc::clone(&lists);
-    let remove_n = move || {
-        let mut locked = lists_to_remove_n.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let idx = read_input_and_cast_value("element index: ", InputType::Number);
-                let idx = handle_value_cast_number(idx);
-
-                list.remove_nth(idx);
-            }
-        }
-    };
-
-    let lists_to_remove_every_n = Arc::clone(&lists);
-    let remove_every_n = move || {
-        let mut locked = lists_to_remove_every_n.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let idx = read_input_and_cast_value("element index: ", InputType::Number);
-                let idx = handle_value_cast_number(idx);
-
-                list.remove_every_n(idx);
-            }
-        }
-    };
-
-    let lists_to_sort = Arc::clone(&lists);
-    let sort_list = move || {
-        let mut locked = lists_to_sort.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let sort_method = read_input_and_cast_value("sort method: ", InputType::Text);
-                let sort_method = handle_value_cast_string(sort_method);
-                let sort_method = match sort_method.trim().to_lowercase().as_str() {
-                    "name" => SearchCriteria::Name("".into()),
-                    "surname" => SearchCriteria::Surname("".into()),
-                    "address" => SearchCriteria::Address("".into()),
-                    "rating" => SearchCriteria::Rating(0),
-                    _ => {
-                        println!("no such option");
-                        return;
-                    }
-                };
-
-                let is_ascending_order_inp =
-                    read_input_and_cast_value("ascending? (true or false): ", InputType::Text);
-                let is_ascending_order_inp = handle_value_cast_string(is_ascending_order_inp);
-
-                let is_ascending = match is_ascending_order_inp.trim().to_lowercase().as_str() {
-                    "true" => true,
-                    "false" => false,
-                    _ => {
-                        println!("wrong input");
-                        return;
-                    }
-                };
-
-                list.sort(sort_method, is_ascending);
-            }
-        }
-    };
-
-    let lists_to_copy = Arc::clone(&lists);
-    let copy_list = move || {
-        let mut locked = lists_to_copy.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                let copied = list.clone();
-                locked.push(copied);
-            }
-        }
-    };
-
-    let lists_to_clear = Arc::clone(&lists);
-    let clear_list = move || {
-        let mut locked = lists_to_clear.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx = read_input_and_cast_value("list index: ", InputType::Number);
-            let list_idx = handle_value_cast_number(list_idx);
-
-            if let Some(list) = locked.get_mut(list_idx) {
-                list.clear();
-            }
-        }
-    };
-
-    let lists_to_merge = Arc::clone(&lists);
-    let merge_lists = move || {
-        let mut locked = lists_to_merge.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx1 = read_input_and_cast_value("list index 1: ", InputType::Number);
-            let list_idx1 = handle_value_cast_number(list_idx1);
-
-            let list_idx2 = read_input_and_cast_value("list index 2: ", InputType::Number);
-            let list_idx2 = handle_value_cast_number(list_idx2);
-
-            if list_idx1 < locked.len() && list_idx2 < locked.len() && list_idx1 != list_idx2 {
-                let (i1, i2) = if list_idx1 < list_idx2 {
-                    (list_idx1, list_idx2)
-                } else {
-                    (list_idx2, list_idx1)
-                };
-
-                let list2 = locked.remove(i2);
-                locked[i1].append(list2);
-            }
-        }
-    };
-
-    let lists_to_intersect = Arc::clone(&lists);
-    let intersect_lists = move || {
-        let mut locked = lists_to_intersect.lock().unwrap();
-
-        if locked.is_empty() {
-            println!("no lists found in current scope");
-            return;
-        } else {
-            let list_idx1 = read_input_and_cast_value("list index 1: ", InputType::Number);
-            let list_idx1 = handle_value_cast_number(list_idx1);
-
-            let list_idx2 = read_input_and_cast_value("list index 2: ", InputType::Number);
-            let list_idx2 = handle_value_cast_number(list_idx2);
-
-            if let Some(list) = locked.get(list_idx1)
-                && let Some(list2) = locked.get(list_idx2)
-            {
-                if let Some(result_list) = List::intersection(&list, &list2) {
-                    locked.push(result_list);
-                } else {
-                    println!("couldnt finish intersection list");
-                }
-            }
-        }
-    };
-
     let mut input_buffer = InputBuffer::new();
+
+    let task1 = || {
+        let size = read_input_and_cast_value("Size of both teams: ", InputType::Number);
+        let size = handle_value_cast_number(size);
+
+        let mut team1 = LinkedList::<String>::new();
+        let mut team2 = LinkedList::<String>::new();
+
+        (0..size).enumerate().for_each(|(i, _)| {
+            let name = read_input_and_cast_value(
+                format!("(team 1) Player name #{}: ", i).as_str(),
+                InputType::Text,
+            );
+            let name = handle_value_cast_string(name);
+            team1.push_back(name);
+        });
+
+        (0..size).enumerate().for_each(|(i, _)| {
+            let name = read_input_and_cast_value(
+                format!("(team 2) Player name #{}: ", i).as_str(),
+                InputType::Text,
+            );
+            let name = handle_value_cast_string(name);
+            team2.push_back(name);
+        });
+
+        let n = read_input_and_cast_value("n: ", InputType::Number);
+        let n = handle_value_cast_number(n);
+
+        let m = read_input_and_cast_value("m: ", InputType::Number);
+        let m = handle_value_cast_number(m);
+
+        let result1: Vec<_> = team1
+            .iter()
+            .enumerate()
+            .filter_map(|(i, val)| if i % n == n - 1 { Some(val) } else { None })
+            .collect();
+        let result2: Vec<_> = team2
+            .iter()
+            .enumerate()
+            .filter_map(|(i, val)| if i % m == m - 1 { Some(val) } else { None })
+            .collect();
+
+        println!("Team 1: ");
+        result1.iter().for_each(|el| {
+            println!("{}", el);
+        });
+
+        println!("Team 2: ");
+        result2.iter().for_each(|el| {
+            println!("{}", el);
+        });
+    };
+
+    let task2 = || {
+        let n = read_input_and_cast_value("n: ", InputType::Number);
+        let n = handle_value_cast_number(n);
+
+        let m = read_input_and_cast_value("m: ", InputType::Number);
+        let m = handle_value_cast_number(m);
+
+        let mut list = LinkedList::<String>::new();
+
+        (0..n).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Soldier #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            list.push_back(name);
+        });
+
+        let mut idx = 0;
+        while list.len() > 1 {
+            idx = (idx + m - 1) % list.len();
+            remove_nth(&mut list, idx);
+        }
+
+        println!("last: {}", list.front().unwrap());
+    };
+
+    let task3 = || {
+        let size_of_people = read_input_and_cast_value("Amount of people: ", InputType::Number);
+        let size_of_people = handle_value_cast_number(size_of_people);
+
+        let prizes_amount = read_input_and_cast_value("Amount of prizes: ", InputType::Number);
+        let prizes_amount = handle_value_cast_number(prizes_amount);
+
+        let mut people = LinkedList::<String>::new();
+        let mut prizes = LinkedList::<String>::new();
+
+        (0..size_of_people).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Person #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            people.push_back(name);
+        });
+
+        (0..prizes_amount).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Prize #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            prizes.push_back(name);
+        });
+
+        let n = read_input_and_cast_value("Amount of winners (n): ", InputType::Number);
+        let n = handle_value_cast_number(n);
+
+        let k = read_input_and_cast_value("Every k-th winner (k): ", InputType::Number);
+        let k = handle_value_cast_number(k);
+
+        let t = read_input_and_cast_value("Prize recount (t): ", InputType::Number);
+        let t = handle_value_cast_number(t);
+
+        let mut p_idx = 0;
+        let mut pr_idx = 0;
+
+        for i in 0..n {
+            p_idx = (p_idx + k - 1) % people.len();
+
+            if t == 0 {
+                pr_idx = i % prizes.len();
+            } else {
+                pr_idx = (pr_idx + t - 1) % prizes.len();
+            }
+
+            let winner = remove_nth(&mut people, p_idx).unwrap();
+            let prize = remove_nth(&mut prizes, pr_idx).unwrap();
+
+            println!("Winner: {}, Prize: {}", winner, prize);
+
+            p_idx = (p_idx + 1) % people.len();
+        }
+    };
+
+    let task4 = || {
+        let size = read_input_and_cast_value("List size: ", InputType::Number);
+        let size = handle_value_cast_number(size);
+
+        let mut students = LinkedList::<String>::new();
+        let mut tickets = LinkedList::<String>::new();
+
+        (0..size).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Student #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            students.push_back(name);
+        });
+
+        (0..size).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Ticket #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            tickets.push_back(name);
+        });
+
+        let n = read_input_and_cast_value("n: ", InputType::Number);
+        let n = handle_value_cast_number(n);
+
+        let k = read_input_and_cast_value("k: ", InputType::Number);
+        let k = handle_value_cast_number(k);
+
+        let mut st_idx = 0;
+        let mut tk_idx = 0;
+
+        for _ in 0..size {
+            st_idx = (st_idx + k - 1) % students.len();
+            tk_idx = (tk_idx + n - 1) % tickets.len();
+
+            let student = remove_nth(&mut students, st_idx).unwrap();
+            let ticket = remove_nth(&mut tickets, tk_idx).unwrap();
+
+            println!("Student: {}, Ticket: {}", student, ticket);
+        }
+    };
+
+    let task5 = || {
+        let t1 = read_input_and_cast_value("Product amount: ", InputType::Number);
+        let t1 = handle_value_cast_number(t1);
+
+        let t2 = read_input_and_cast_value("Customer amount: ", InputType::Number);
+        let t2 = handle_value_cast_number(t2);
+
+        let mut products = LinkedList::<String>::new();
+        let mut customers = LinkedList::<String>::new();
+
+        (0..t1).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Product #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            products.push_back(name);
+        });
+
+        (0..t2).enumerate().for_each(|(i, _)| {
+            let name =
+                read_input_and_cast_value(format!("Customer #{}: ", i).as_str(), InputType::Text);
+            let name = handle_value_cast_string(name);
+            customers.push_back(name);
+        });
+
+        let n = read_input_and_cast_value("n: ", InputType::Number);
+        let n = handle_value_cast_number(n);
+
+        let m = read_input_and_cast_value("m: ", InputType::Number);
+        let m = handle_value_cast_number(m);
+
+        let mut p_idx = 0;
+        let mut c_idx = 0;
+
+        let pairs = std::cmp::min(t1, t2);
+
+        for _ in 0..pairs {
+            p_idx = (p_idx + n - 1) % products.len();
+            c_idx = (c_idx + m - 1) % customers.len();
+
+            let customer = remove_nth(&mut customers, c_idx).unwrap();
+            let product = remove_nth(&mut products, p_idx).unwrap();
+
+            println!("Customer: {}, Product: {}", customer, product);
+        }
+    };
+
     input_buffer
-        .bind("0", "exit", || process::exit(0))
-        .bind("1", "add first", add_first)
-        .bind("2", "insert after n", insert_after_n)
-        .bind("3", "move after n", move_after_n)
-        .bind("4", "remove n", remove_n)
-        .bind("5", "remove every n", remove_every_n)
-        .bind("6", "sort", sort_list)
-        .bind("7", "copy list", copy_list)
-        .bind("8", "clear list", clear_list)
-        .bind("9", "merge lists", merge_lists)
-        .bind("10", "intersectional list", intersect_lists)
-        .bind("p", "print lists (debug tool)", print_lists)
-        .bind("c", "create list (debug tool)", create_list)
-        .bind("r", "remove list (debug tool)", remove_list)
-        .bind("i", "insert last (debug tool)", insert_last);
+        .bind("0", "exit", || std::process::exit(0))
+        .bind("1", "1.1", task1)
+        .bind("2", "1.2", task2)
+        .bind("3", "1.3", task3)
+        .bind("4", "1.4", task4)
+        .bind("5", "1.5", task5);
 
     loop {
         println!("\nOptions:");

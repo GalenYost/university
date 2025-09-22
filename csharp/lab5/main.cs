@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Diagnostics;
 using System.Text;
 
 public enum Genre
@@ -14,104 +13,6 @@ public interface IDateAndCopy
 {
     object DeepCopy();
     DateTime Date { get; set; }
-}
-
-public class TestCollections<TKey, TValue>
-    where TKey : class
-    where TValue : TKey
-{
-    private List<Person> persons = new List<Person>();
-    private List<string> strings = new List<string>();
-    private Dictionary<Person, Musician> personToMusician = new Dictionary<Person, Musician>();
-    private Dictionary<string, Musician> stringToMusician = new Dictionary<string, Musician>();
-
-    public static Musician GenerateMusician(int index)
-    {
-        var m = new Musician
-        {
-            Name = $"Name{index}",
-            Surname = $"Surname{index}",
-            Birthday = new DateTime(2025, 1, 1),
-            Rating = 2,
-        };
-
-        m.Songs.Add(new Song($"Song{index}_A", Genre.Pop, new DateTime(2025, 1, 1)));
-        m.Songs.Add(new Song($"Song{index}_B", Genre.Rock, new DateTime(2025, 1, 1)));
-        m.Concerts.Add(new Concert($"Concert{index}", "City", new DateTime(2025, 1, 1)));
-
-        return m;
-    }
-
-    public TestCollections(int count)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            var musician = GenerateMusician(i);
-            var person = musician.Person;
-            persons.Add(person);
-            strings.Add(musician.Surname);
-
-            personToMusician[person] = musician;
-            stringToMusician[musician.Surname] = musician;
-        }
-    }
-
-    public string MeasureSearchTimes()
-    {
-        if (persons.Count == 0)
-            return "Collections are empty.";
-
-        int mid = persons.Count / 2;
-
-        var targetPerson = persons[mid];
-        var targetMusician = personToMusician[targetPerson];
-        var targetString = strings[mid];
-
-        var sw = new Stopwatch();
-        var results = new List<string>();
-
-        bool found;
-
-        sw.Restart();
-        found = persons.Contains(targetPerson);
-        sw.Stop();
-        results.Add($"List<Person>.Contains: {sw.ElapsedTicks} ticks | found={found}");
-
-        sw.Restart();
-        found = strings.Contains(targetString);
-        sw.Stop();
-        results.Add($"List<string>.Contains: {sw.ElapsedTicks} ticks | found={found}");
-
-        sw.Restart();
-        found = personToMusician.ContainsKey(targetPerson);
-        sw.Stop();
-        results.Add(
-            $"Dictionary<Person,Musician>.ContainsKey: {sw.ElapsedTicks} ticks | found={found}"
-        );
-
-        sw.Restart();
-        found = personToMusician.ContainsValue(targetMusician);
-        sw.Stop();
-        results.Add(
-            $"Dictionary<Person,Musician>.ContainsValue: {sw.ElapsedTicks} ticks | found={found}"
-        );
-
-        sw.Restart();
-        found = stringToMusician.ContainsKey(targetString);
-        sw.Stop();
-        results.Add(
-            $"Dictionary<string,Musician>.ContainsKey: {sw.ElapsedTicks} ticks | found={found}"
-        );
-
-        sw.Restart();
-        found = stringToMusician.ContainsValue(targetMusician);
-        sw.Stop();
-        results.Add(
-            $"Dictionary<string,Musician>.ContainsValue: {sw.ElapsedTicks} ticks | found={found}"
-        );
-
-        return string.Join("\n", results);
-    }
 }
 
 public class Person : IDateAndCopy, IComparable, IComparer<Person>
@@ -493,7 +394,6 @@ public class MusicianCollection
 {
     private List<Musician> musicians = new List<Musician>();
 
-    // назва колекції
     public string Name { get; set; }
 
     public event MusicianListHandler MusicianCountChanged;
@@ -589,7 +489,6 @@ public class MusicianCollection
         return true;
     }
 
-    // індексатор
     public Musician this[int index]
     {
         get
@@ -745,48 +644,36 @@ public class Program
 {
     public static void Main()
     {
-        var collection = new MusicianCollection();
-        collection.AddMusicians(
-            new Musician
-            {
-                Name = "Anna",
-                Surname = "Kowalska",
-                Birthday = new DateTime(1991, 4, 20),
-                Rating = 4.3,
-            },
-            new Musician
-            {
-                Name = "Boris",
-                Surname = "Ivanov",
-                Birthday = new DateTime(1987, 2, 10),
-                Rating = 4.7,
-            },
-            new Musician
-            {
-                Name = "Zoya",
-                Surname = "Abramova",
-                Birthday = new DateTime(1995, 12, 5),
-                Rating = 4.1,
-            }
+        var collection1 = new MusicianCollection { Name = "Collection1" };
+        var collection2 = new MusicianCollection { Name = "Collection2" };
+
+        var listener1 = new Listener();
+        var listener2 = new Listener();
+
+        collection1.MusicianCountChanged += listener1.AddEntry;
+        collection1.MusicianReferenceChanged += listener1.AddEntry;
+
+        collection1.MusicianReferenceChanged += listener2.AddEntry;
+        collection2.MusicianReferenceChanged += listener2.AddEntry;
+
+        collection1.AddMusicians(
+            new Musician { Name = "Anna", Surname = "Kowalska", Birthday = new DateTime(1991, 4, 20), Rating = 4.3 },
+            new Musician { Name = "Boris", Surname = "Ivanov", Birthday = new DateTime(1987, 2, 10), Rating = 4.7 }
         );
 
-        Console.WriteLine("Original collection:");
-        Console.WriteLine(collection.ToShortString());
+        collection1.Remove(0);
 
-        collection.SortBySurname();
-        Console.WriteLine("\nSorted by surname:");
-        Console.WriteLine(collection.ToShortString());
+        collection1[0] = new Musician { Name = "Zoya", Surname = "Abramova", Birthday = new DateTime(1995, 12, 5), Rating = 4.1 };
 
-        collection.SortByBirthDate();
-        Console.WriteLine("\nSorted by birth date:");
-        Console.WriteLine(collection.ToShortString());
+        collection2.AddMusicians(
+            new Musician { Name = "John", Surname = "Doe", Birthday = new DateTime(1980, 5, 12), Rating = 4.7 }
+        );
+        collection2[0] = new Musician { Name = "Alice", Surname = "Smith", Birthday = new DateTime(1990, 3, 22), Rating = 4.9 };
 
-        collection.SortByRating();
-        Console.WriteLine("\nSorted by rating:");
-        Console.WriteLine(collection.ToShortString());
+        Console.WriteLine("Listener1");
+        Console.WriteLine(listener1);
 
-        var tests = new TestCollections<Person, Musician>(1000);
-        Console.WriteLine("\nTestCollections search timings:");
-        Console.WriteLine(tests.MeasureSearchTimes());
+        Console.WriteLine("Listener2");
+        Console.WriteLine(listener2);
     }
 }
