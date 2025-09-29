@@ -1,5 +1,12 @@
 .tools
 *.lock
+
+*.iso
+*.qcow
+*.vbox*
+
 bin/
 obj/
 target/
+
+.vagrant/
