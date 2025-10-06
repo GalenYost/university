@@ -30,7 +30,7 @@ pub struct Entry<V> {
 
 #[derive(Clone)]
 pub struct HashTable<V> {
-    entries: Vec<Vec<Entry<V>>>,
+    entries: Vec<Option<Entry<V>>>,
 }
 
 impl<V> Display for HashTable<V>
@@ -45,7 +45,7 @@ where
         }
 
         self.entries.iter().enumerate().for_each(|(i, el)| {
-            if el.is_empty() {
+            if el.is_none() {
                 return;
             }
 
@@ -87,72 +87,117 @@ where
 {
     pub fn new(cap: usize) -> Self {
         HashTable {
-            entries: vec![Vec::new(); cap],
+            entries: vec![None; cap],
         }
     }
 
     pub fn insert(&mut self, key: InputValue, value: V) -> &mut Self {
-        let hashed = match key {
-            InputValue::Text(ref text) => hash_by_string(text.as_str(), self.entries.len() as u32),
+        let hashed = match &key {
+            InputValue::Text(text) => hash_by_string(text, self.entries.len() as u32) as usize,
             InputValue::Number(num) => {
-                hash_by_multiplication(num as u32, self.entries.len() as u32)
+                hash_by_multiplication(*num as u32, self.entries.len() as u32) as usize
             }
-        } as usize;
+        };
 
-        let slot = self.entries.get_mut(hashed).unwrap();
-
-        for entry in slot.iter_mut() {
-            if entry.key == key {
-                entry.value = value;
-                return self;
+        if let Some(slot) = self.entries.get_mut(hashed) {
+            match slot {
+                Some(entry) if entry.key == key => {
+                    entry.value = value;
+                }
+                None => {
+                    *slot = Some(Entry {
+                        key: key.clone(),
+                        key_type: key.clone().into(),
+                        value,
+                    });
+                }
+                Some(_) => {
+                    *slot = Some(Entry {
+                        key: key.clone(),
+                        key_type: key.clone().into(),
+                        value,
+                    });
+                }
             }
         }
-
-        slot.push(Entry {
-            key: key.clone(),
-            key_type: key.into(),
-            value,
-        });
 
         self
     }
 
     pub fn remove(&mut self, key: InputValue) -> &mut Self {
-        let hashed = match key {
-            InputValue::Text(ref text) => hash_by_string(text.as_str(), self.entries.len() as u32),
+        let hashed = match &key {
+            InputValue::Text(text) => hash_by_string(text, self.entries.len() as u32) as usize,
             InputValue::Number(num) => {
-                hash_by_multiplication(num as u32, self.entries.len() as u32)
+                hash_by_multiplication(*num as u32, self.entries.len() as u32) as usize
             }
-        } as usize;
+        };
 
-        let slot = self.entries.get_mut(hashed).unwrap();
+        let mut i = hashed;
+        loop {
+            match &self.entries[i] {
+                Some(entry) if entry.key == key => {
+                    self.entries[i] = None;
 
-        for i in 0..slot.len() {
-            if slot[i].key == key {
-                slot.remove(i);
-                break;
+                    let mut j = (i + 1) % self.entries.len();
+                    while let Some(entry) = self.entries[j].take() {
+                        let new_hashed = match &entry.key {
+                            InputValue::Text(text) => {
+                                hash_by_string(text, self.entries.len() as u32) as usize
+                            }
+                            InputValue::Number(num) => {
+                                hash_by_multiplication(*num as u32, self.entries.len() as u32)
+                                    as usize
+                            }
+                        };
+
+                        let mut k = new_hashed;
+                        while self.entries[k].is_some() {
+                            k = (k + 1) % self.entries.len();
+                        }
+                        self.entries[k] = Some(entry);
+
+                        j = (j + 1) % self.entries.len();
+                    }
+
+                    return self;
+                }
+                None => return self,
+                _ => {
+                    i = (i + 1) % self.entries.len();
+                    if i == hashed {
+                        return self;
+                    }
+                }
             }
         }
-
-        self
     }
 
     pub fn find(&self, key: InputValue) -> Option<&V> {
-        let hashed = match key {
-            InputValue::Text(ref text) => hash_by_string(text.as_str(), self.entries.len() as u32),
-            InputValue::Number(num) => {
-                hash_by_multiplication(num as u32, self.entries.len() as u32)
-            }
-        } as usize;
-
-        let slot = self.entries.get(hashed).unwrap();
-
-        for i in 0..slot.len() {
-            if slot[i].key == key {
-                return Some(&slot[i].value);
-            }
+        if self.entries.is_empty() {
+            return None;
         }
 
-        None
+        let hashed = match key {
+            InputValue::Text(ref text) => {
+                hash_by_string(text.as_str(), self.entries.len() as u32) as usize
+            }
+            InputValue::Number(num) => {
+                hash_by_multiplication(num as u32, self.entries.len() as u32) as usize
+            }
+        };
+
+        let mut i = hashed;
+        loop {
+            match &self.entries[i] {
+                Some(entry) if entry.key == key => return Some(&entry.value),
+                None => return None,
+                _ => {
+                    i = (i + 1) % self.entries.len();
+                    if i == hashed {
+                        return None;
+                    }
+                }
+            }
+        }
     }
 }
