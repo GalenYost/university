@@ -5,6 +5,7 @@
 *.qcow
 *.vbox*
 
+build/
 bin/
 obj/
 target/

@@ -14,6 +14,9 @@
             pkgs.gnumake
             pkgs.rocmPackages.clang
          ];
+         shellHook = ''
+            exec nu
+         '';
       };
    };
 }

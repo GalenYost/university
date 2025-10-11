@@ -3,12 +3,12 @@
 #include <string>
 
 class Human {
-private:
+ private:
    std::string name;
    std::string surname;
    int age;
 
-public:
+ public:
    Human(const std::string &name, const std::string &surname, int age);
 
    std::string getName() const;
@@ -18,6 +18,7 @@ public:
    void setName(const std::string &name);
    void setSurname(const std::string &surname);
    void setAge(int age);
+   void setAge(std::string age);
 
    virtual void display() const;
 };

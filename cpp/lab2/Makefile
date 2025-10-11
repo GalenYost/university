@@ -1,3 +1,5 @@
+MAKEFLAGS += --no-print-directory
+
 FILE_EXT := cpp
 BUILD_DIR := build
 DEBUG_BUILD_DIR := debug
@@ -19,7 +21,7 @@ $(EXE): $(OBJS)
 $(BUILD_DIR)/%.o: %.$(FILE_EXT) | build
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-debug: $(DEBUG_EXE)
+gdb: $(DEBUG_EXE)
 	@gdb $(DEBUG_EXE)
 	@$(MAKE) clean
 
@@ -32,6 +34,9 @@ $(DEBUG_BUILD_DIR)/%.o: %.$(FILE_EXT) | build
 
 build:
 	@mkdir -p $(BUILD_DIR)
+
+debug:
+	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DDEBUG_MODE"
 
 execute: all
 	@./$(EXE)

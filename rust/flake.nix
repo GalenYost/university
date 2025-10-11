@@ -16,9 +16,7 @@
             pkgs.rustfmt
          ];
          shellHook = ''
-            export PS1='rs \W \$ '
-            export PATH="$HOME/.cargo/bin:$PATH"
-            export RUSTFLAGS="-A dead_code"
+            exec nu
          '';
       };
    };
