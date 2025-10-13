@@ -67,7 +67,7 @@ impl InputBuffer {
 
     pub fn read_input_and_call(&mut self, prompt_text: &str) -> Result<(), String> {
         print!("{}", prompt_text);
-        let key: String = read_input()?;
+        let key: String = read_input();
 
         for (bind, callback) in self.options.iter_mut() {
             if bind.key == key {
