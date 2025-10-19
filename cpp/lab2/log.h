@@ -1,7 +1,7 @@
 #pragma once
 
-#include <iostream>
-#include <sstream>
+#include <cstdarg>
+#include <cstdio>
 
 #define DEBUG_COLOR "\033[36m"
 #define INFO_COLOR "\033[32m"
@@ -13,29 +13,37 @@ enum class LogLevel {
    INFO,
    WARN,
    ERROR,
-#ifdef DEBUG_MODE
-   DEBUG
-#endif
 };
 
-inline void log(LogLevel level, const std::string &msg) {
+inline void log(LogLevel level, const char *__restrict format, ...) {
+   const char *color;
+   const char *prefix;
+
    switch (level) {
    case LogLevel::INFO:
-      std::cout << INFO_COLOR << "[INFO]" << RESET_COLOR << " " << msg
-                << std::endl;
+      color = INFO_COLOR;
+      prefix = "[INFO]";
       break;
    case LogLevel::WARN:
-      std::cout << WARN_COLOR << "[WARN]" << RESET_COLOR << " " << msg
-                << std::endl;
+      color = WARN_COLOR;
+      prefix = "[WARN]";
       break;
    case LogLevel::ERROR:
-      std::cerr << ERROR_COLOR << "[ERROR]" << RESET_COLOR << " " << msg
-                << std::endl;
+      color = ERROR_COLOR;
+      prefix = "[ERROR]";
       break;
-#ifdef DEBUG_MODE
-   case LogLevel::DEBUG:
-      std::cout << DEBUG_COLOR << "[DEBUG]" << RESET_COLOR << " " << msg
-                << std::endl;
-#endif
+   default:
+      color = RESET_COLOR;
+      prefix = "[LOG]";
+      break;
    }
+
+   printf("%s%s%s ", color, prefix, RESET_COLOR);
+
+   va_list args;
+   va_start(args, format);
+   vprintf(format, args);
+   va_end(args);
+
+   printf("\n");
 }

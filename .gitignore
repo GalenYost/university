@@ -5,6 +5,8 @@
 *.qcow
 *.vbox*
 
+.ccls-cache/
+
 build/
 bin/
 obj/

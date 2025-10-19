@@ -1,36 +1,14 @@
 #pragma once
 
-#include <algorithm>
-#include <fstream>
-#include <functional>
-#include <string>
-#include <vector>
+#include "input.h"
+#include "vec.h"
 
-#include "log.h"
-
-enum Direction {
+enum class Direction {
    UP,
    LEFT,
    RIGHT,
    HEAD,
 };
-
-static const std::unordered_map<std::string, Direction> str_to_dir{
-    {"up", Direction::UP},
-    {"left", Direction::LEFT},
-    {"right", Direction::RIGHT},
-    {"head", Direction::HEAD}};
-
-inline Direction parse_direction(const std::string &str) {
-   auto it = str_to_dir.find(str);
-   if (it != str_to_dir.end()) {
-      Direction dir_parsed = it->second;
-      return dir_parsed;
-   } else {
-      log(LogLevel::ERROR, "Wrong direction input, returning to head");
-      return Direction::HEAD;
-   }
-}
 
 template <typename T> struct Node {
    T val;
@@ -38,11 +16,59 @@ template <typename T> struct Node {
    Node *right;
 };
 
+template <typename T> void collectValues(Node<T> *node, Vector<T> *vec) {
+   if (!node) return;
+
+   int *v = (int *)malloc(sizeof(int));
+   *v = node->val;
+   vec->push(v);
+
+   collectValues(node->left, vec);
+   collectValues(node->right, vec);
+}
+
+int cmpInt(const void *a, const void *b) {
+   int x = **(int **)a;
+   int y = **(int **)b;
+   return x - y;
+}
+
+template <typename T> Node<T> *buildBST(Vector<T> *vec, int l, int r) {
+   if (l > r) return NULL;
+
+   int mid = l + (r - l) / 2;
+   Node<T> *node = (Node<T> *)malloc(sizeof(Node<T>));
+   node->val = *(int *)vec->get(mid);
+   node->left = buildBST(vec, l, mid - 1);
+   node->right = buildBST(vec, mid + 1, r);
+
+   return node;
+}
+
+template <typename T> struct FindCtx {
+   int value;
+   Node<T> *found;
+};
+
+template <typename T> Node<T> *copySubtree(Node<T> *node) {
+   if (!node) return nullptr;
+   Node<T> *newNode = new Node<T>{node->val};
+   newNode->left = copySubtree(node->left);
+   newNode->right = copySubtree(node->right);
+   return newNode;
+}
+
+template <typename T> void findCallback(void *env, Node<T> *node) {
+   FindCtx<T> *ctx = (struct FindCtx<T> *)env;
+   if (ctx->found) return;
+   if (node->val == ctx->value) { ctx->found = copySubtree(node); }
+}
+
 template <typename T> class BinaryTree {
  private:
    Node<T> *head = nullptr;
    Node<T> *cur_ptr = nullptr;
-   std::vector<Node<T> *> path;
+   Vector<Node<T> *> path;
 
    BinaryTree(Node<T> *node) : head(node), cur_ptr(node) {}
 
@@ -52,14 +78,6 @@ template <typename T> class BinaryTree {
       clear(node->right);
       delete node;
    };
-
-   Node<T> *copySubtree(Node<T> *node) {
-      if (!node) return nullptr;
-      Node<T> *newNode = new Node<T>{node->val};
-      newNode->left = copySubtree(node->left);
-      newNode->right = copySubtree(node->right);
-      return newNode;
-   }
 
    Node<T> *getNthNode(Node<T> *node, int &index) const {
       if (!node) return nullptr;
@@ -73,49 +91,60 @@ template <typename T> class BinaryTree {
       return getNthNode(node->right, index);
    }
 
-   void traverse(Node<T> *node, std::function<void(Node<T> *)> callback) {
+   void traverse(Node<T> *node, Closure cl) {
       if (!node) return;
 
-      traverse(node->left, callback);
-      callback(node);
-      traverse(node->right, callback);
+      traverse(node->left, cl);
+      cl.cb(cl.env);
+      traverse(node->right, cl);
    };
 
    void displayIndented(Node<T> *node, int depth) {
       if (!node) return;
 
       displayIndented(node->right, depth + 1);
-      for (int i = 0; i < depth; ++i) std::cout << "\t";
+      for (int i = 0; i < depth; ++i) printf("\t");
 
       if (node == cur_ptr) {
-         std::cout << DEBUG_COLOR << node->val << RESET_COLOR << "\n";
+         printf("%s%d%s\n", DEBUG_COLOR, node->val, RESET_COLOR);
       } else {
-         std::cout << node->val << "\n";
+         printf("%d\n", node->val);
       }
       displayIndented(node->left, depth + 1);
    }
 
-   void saveNode(std::ostream &out, Node<T> *node) {
+   void saveNode(FILE *out, Node<T> *node) {
       if (!node) {
-         out << "# ";
+         fprintf(out, "# ");
          return;
       }
-      out << node->val << " ";
+      fprintf(out, "%d ", node->val);
       saveNode(out, node->left);
       saveNode(out, node->right);
    }
 
-   Node<T> *loadNode(std::istream &in) {
-      std::string token;
-      if (!(in >> token)) return nullptr;
+   Node<T> *loadNode(FILE *in) {
+      char token[64];
+      if (fscanf(in, "%63s", token) != 1) {
+         log(LogLevel::ERROR, "EOF");
+         return NULL;
+      }
 
-      if (token == "#") return nullptr;
+      if (token[0] == '#' && token[1] == '\0') return NULL;
 
-      T value;
-      std::istringstream iss(token);
-      iss >> value;
+      int value;
+      if (sscanf(token, "%d", &value) != 1) {
+         log(LogLevel::ERROR, "Parse error");
+         return NULL;
+      }
 
-      Node<T> *node = new Node<T>{value, nullptr, nullptr};
+      Node<T> *node = (Node<T> *)malloc(sizeof(Node<T>));
+      if (!node) {
+         log(LogLevel::ERROR, "fail allocating memory");
+         return NULL;
+      }
+
+      node->val = value;
       node->left = loadNode(in);
       node->right = loadNode(in);
 
@@ -129,13 +158,16 @@ template <typename T> class BinaryTree {
       clear(head);
       head = nullptr;
       cur_ptr = nullptr;
-      path.clear();
-   };
+      delete &path;
+   }
 
    const T &operator[](int n) const {
       int idx = n;
       Node<T> *result = getNthNode(head, idx);
-      if (!result) throw std::out_of_range("BinaryTree index out of range");
+      if (!result) {
+         log(LogLevel::ERROR, "BinaryTree index out of range");
+         return NULL;
+      }
       return result->val;
    }
 
@@ -181,9 +213,6 @@ template <typename T> class BinaryTree {
       if (!cur_ptr) {
          if (!head) {
             insertHead(value, true);
-#ifdef DEBUG_MODE
-            log(LogLevel::DEBUG, "New head assigned");
-#endif
             return true;
          } else {
             movePtr(Direction::HEAD);
@@ -191,21 +220,13 @@ template <typename T> class BinaryTree {
       }
 
       switch (dir) {
-      case LEFT:
+      case Direction::LEFT:
          if (cur_ptr->left) clear(cur_ptr->left);
-         cur_ptr->left = new Node<T>{value, nullptr, nullptr};
-#ifdef DEBUG_MODE
-         log(LogLevel::DEBUG,
-             "New value for left pointer assigned: " + std::to_string(value));
-#endif
+         cur_ptr->left = new Node<T>{value, NULL, NULL};
          break;
-      case RIGHT:
+      case Direction::RIGHT:
          if (cur_ptr->right) clear(cur_ptr->right);
-         cur_ptr->right = new Node<T>{value, nullptr, nullptr};
-#ifdef DEBUG_MODE
-         log(LogLevel::DEBUG,
-             "New value for right pointer assigned: " + std::to_string(value));
-#endif
+         cur_ptr->right = new Node<T>{value, NULL, NULL};
          break;
 
       default:
@@ -223,56 +244,47 @@ template <typename T> class BinaryTree {
       }
 
       switch (dir) {
-      case UP:
-         if (!path.empty()) {
-            cur_ptr = path.back();
-            path.pop_back();
-#ifdef DEBUG_MODE
-            log(LogLevel::DEBUG, "Moving up");
-#endif
+      case Direction::UP:
+         if (path.len() == 0) {
+            cur_ptr = *path.get(path.len() - 1);
+            path.pop();
          } else {
             log(LogLevel::WARN, "Dropping call, path is empty");
          }
          break;
 
-      case LEFT:
+      case Direction::LEFT:
          if (cur_ptr->left) {
-            path.push_back(cur_ptr);
+            path.push(&cur_ptr);
             cur_ptr = cur_ptr->left;
-#ifdef DEBUG_MODE
-            log(LogLevel::DEBUG, "Moving left");
-#endif
          } else {
             log(LogLevel::WARN, "Left element doesnt exist");
          }
          break;
 
-      case RIGHT:
+      case Direction::RIGHT:
          if (cur_ptr->right) {
-            path.push_back(cur_ptr);
+            path.push(&cur_ptr);
             cur_ptr = cur_ptr->right;
-#ifdef DEBUG_MODE
-            log(LogLevel::DEBUG, "Moving right");
-#endif
          } else {
             log(LogLevel::WARN, "Right element doesnt exist");
          }
          break;
 
-      case HEAD:
+      case Direction::HEAD:
          cur_ptr = head;
-         path.clear();
-#ifdef DEBUG_MODE
-         log(LogLevel::DEBUG, "Moving to head");
-#endif
+         delete &path;
          break;
       };
 
       return;
    }
 
-   void iter(std::function<void(Node<T> *)> callback) {
-      traverse(head, callback);
+   void iter(Node<T> *node, Closure closure) {
+      if (!node) return;
+      closure.cb(node, closure.env);
+      iter(node->left, closure);
+      iter(node->right, closure);
    }
 
    void displayCurrent() {
@@ -280,14 +292,8 @@ template <typename T> class BinaryTree {
          log(LogLevel::INFO, "Tree is empty");
          return;
       }
-      if (!cur_ptr) {
-#ifdef DEBUG_MODE
-         log(LogLevel::DEBUG, "Assigning cur_ptr to head");
-#endif
-         movePtr(Direction::HEAD);
-      }
-      log(LogLevel::INFO,
-          "Current pointer value: " + std::to_string(cur_ptr->val));
+      if (!cur_ptr) { movePtr(Direction::HEAD); }
+      log(LogLevel::INFO, "Current pointer value: %s", cur_ptr->val);
    };
    void displayTree() {
       if (this->empty()) {
@@ -298,64 +304,48 @@ template <typename T> class BinaryTree {
       displayIndented(head, 0);
    };
 
-   void saveToFile(const std::string &filename) {
-      std::ofstream ofs(filename);
-      if (!ofs) {
-         log(LogLevel::ERROR, "Cannot open file for writing: " + filename);
+   void saveToFile(const char *filename, Node<T> *head) {
+      FILE *f = fopen(filename, "w");
+      if (!f) {
+         log(LogLevel::ERROR, "Cannot open file for writing: %s\n", filename);
          return;
       }
-      saveNode(ofs, head);
-#ifdef DEBUG_MODE
-      log(LogLevel::DEBUG, "Saved tree to file: " + filename);
-#endif
+      saveNode(f, head);
+      fclose(f);
    }
 
-   void loadFromFile(const std::string &filename) {
-      std::ifstream ifs(filename);
-      if (!ifs) {
-         log(LogLevel::ERROR, "Cannot open file for reading: " + filename);
-         return;
+   Node<T> *loadFromFile(const char *filename, Node<T> **cur_ptr) {
+      FILE *f = fopen(filename, "r");
+      if (!f) {
+         log(LogLevel::ERROR, "Cannot open file for reading: %s\n", filename);
+         return NULL;
       }
 
-      clear(head);
-      head = loadNode(ifs);
-      cur_ptr = head;
-      path.clear();
+      Node<T> *head = loadNode(f);
+      fclose(f);
 
-#ifdef DEBUG_MODE
-      log(LogLevel::DEBUG, "Loaded new tree from file: " + filename);
-#endif
+      if (cur_ptr) *cur_ptr = head;
+      return head;
    }
 
-   bool empty() const { return head == nullptr; }
+   void sortTree(Node<T> **head) {
+      Vector<T> values = Vector<T>();
+      collectValues(*head, &values);
 
-   void sort(std::function<bool(const T &, const T &)> comp = std::less<T>()) {
-      std::vector<T> values;
-      iter([&](Node<T> *node) { values.push_back(node->val); });
+      qsort(values.vec, values.len(&values), sizeof(int *), cmpInt);
 
-      std::sort(values.begin(), values.end(), comp);
-      clear(head);
+      clear(*head);
+      *head = buildBST(&values, 0, values.len(&values) - 1);
 
-      std::function<Node<T> *(int, int)> buildBST = [&](int l,
-                                                        int r) -> Node<T> * {
-         if (l > r) return nullptr;
-         int mid = l + (r - l) / 2;
-         Node<T> *node = new Node<T>{values[mid], nullptr, nullptr};
-         node->left = buildBST(l, mid - 1);
-         node->right = buildBST(mid + 1, r);
-         return node;
-      };
-
-      head = buildBST(0, values.size() - 1);
-      cur_ptr = head;
-      path.clear();
-   };
+      delete values;
+   }
 
    BinaryTree<T> find(T value) {
-      Node<T> *found = nullptr;
-      traverse(head, [&](Node<T> *node) {
-         if (!found && node->val == value) { found = copySubtree(node); }
-      });
-      return fromNode(found);
+      Node<T> *found;
+      FindCtx ctx = {.value = value, .found = NULL};
+      traverse(head, findCallback, &ctx);
+      return fromNode(ctx.found);
    };
+
+   bool empty() const { return head == NULL; }
 };

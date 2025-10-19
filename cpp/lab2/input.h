@@ -1,71 +1,136 @@
 #pragma once
 
-#include "log.h"
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <string>
-#include <vector>
+#include <cstdio>
+#include <cstdlib>
 
-using Callback = std::function<void(void)>;
+#include "vec.h"
 
-struct Pair {
-   std::string key;
-   std::string value;
-   Callback callback;
-   Pair(const std::string &k, const std::string &v, Callback cb)
-       : key(k), value(v), callback(cb) {};
+enum class InputType {
+   INT,
+   BOOL,
+   STR,
+   CHAR,
 };
 
-template <typename T> T readInputAndCastValue() {
-   std::string input;
-   std::getline(std::cin, input);
+typedef struct {
+   InputType type;
+   union {
+      int i;
+      bool b;
+      char *str;
+      char ch;
+   };
+} InputValue;
 
-   std::istringstream iss(input);
-   T value;
+char *readInput(size_t bufsize) {
+   size_t len = 0;
+   char *buffer = (char *)malloc(bufsize);
 
-   if constexpr (std::is_same_v<T, std::string>) {
-      return input;
-   } else if (iss >> value) {
-      return value;
-   } else {
-      throw std::runtime_error("Invalid input for given type");
+   if (!buffer) {
+      log(LogLevel::ERROR, "fail allocating memory");
+      return NULL;
    }
-};
+
+   int c;
+   while ((c = getchar()) != '\n' && c != EOF) {
+      buffer[len++] = (char)c;
+
+      if (len >= bufsize) {
+         bufsize *= 2;
+         char *tmp = (char *)realloc(buffer, bufsize);
+         if (!tmp) {
+            log(LogLevel::ERROR, "fail allocating memory");
+            free(buffer);
+            return NULL;
+         }
+         buffer = tmp;
+      }
+   }
+
+   buffer[len] = '\0';
+   return buffer;
+}
+
+InputValue readInputCastValue(InputType type, size_t bufsize) {
+   InputValue val = InputValue{.type = type};
+
+   char *input = readInput(bufsize);
+
+   switch (type) {
+   case InputType::INT:
+      val.i = atoi(input);
+      break;
+   case InputType::BOOL:
+      val.b = (atoi(input) != 0);
+      break;
+   case InputType::CHAR:
+      val.ch = input[0];
+      break;
+   case InputType::STR:
+      val.str = input;
+      break;
+   };
+
+   if (type != InputType::STR) free(input);
+
+   return val;
+}
+
+typedef void (*Callback)(void *ctx);
+typedef struct {
+   void *env;
+   Callback cb;
+} Closure;
+
+typedef struct {
+   char key;
+   char *value;
+   Closure cl;
+} Pair;
 
 class InputBuffer {
  private:
-   std::vector<Pair> pairs;
+   Vector<Pair> pairs;
 
  public:
    InputBuffer() = default;
 
-   InputBuffer &bind(std::string key, std::string value, Callback callback) {
-      for (const auto &pair : pairs) {
-         if (pair.key == key) return *this;
+   InputBuffer &bind(char key, char *value, Closure cl) {
+      Pair *pair = (Pair *)malloc(sizeof(Pair));
+      if (!pair) {
+         log(LogLevel::ERROR, "fail allocating memory");
+         return *this;
       }
-      pairs.emplace_back(key, value, callback);
+      pair->key = key;
+      pair->value = value;
+      pair->cl = cl;
+      pairs.push(pair);
       return *this;
-   };
+   }
 
-   void prompt(const std::string &msg) const {
-      std::cout << msg;
-      if (pairs.empty()) {
-         log(LogLevel::WARN, "No InputBuffer options, ignoring call");
-         return;
-      }
-      for (const auto &pair : pairs) {
-         std::cout << pair.key << " - " << pair.value << "\n";
+   void prompt(char *str) {
+      printf("%s\n", str);
+      for (unsigned i = 0; i < pairs.len(); i++) {
+         Pair *cur = pairs.get(i);
+         if (!cur) continue;
+         printf("%c - %s\n", cur->key, cur->value);
       }
    }
 
-   void awaitInput(const std::string &prompt) const {
-      std::cout << prompt;
-      std::string keyInput = readInputAndCastValue<std::string>();
-      for (const auto &pair : pairs) {
-         if (pair.key != keyInput) continue;
-         pair.callback();
-         break;
+   void awaitInput(char *str) {
+      printf("%s", str);
+      InputValue input = readInputCastValue(InputType::CHAR, 1);
+      if (!input.ch) {
+         log(LogLevel::ERROR, "fail reading input");
+         return;
       }
+      for (unsigned i = 0; i < pairs.len(); i++) {
+         Pair *cur = pairs.get(i);
+         if (!cur) continue;
+         if (cur->key != input.ch) continue;
+         cur->cl.cb(cur->cl.env);
+         return;
+      }
+      log(LogLevel::WARN, "No such option: %c", input.ch);
    }
 };

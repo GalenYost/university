@@ -1,22 +1,27 @@
 {
-   inputs = {
-      nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-   };
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
 
-   outputs = { self, nixpkgs }: let
+  outputs =
+    { self, nixpkgs }:
+    let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-   in {
+    in
+    {
       devShells.${system}.default = pkgs.mkShell {
-         buildInputs = [
-            pkgs.libgcc
-            pkgs.gdb
-            pkgs.gnumake
-            pkgs.rocmPackages.clang
-         ];
-         shellHook = ''
-            exec nu
-         '';
+        buildInputs = [
+          pkgs.gnumake
+          pkgs.ccls
+          # pkgs.llvmPackages_latest.lldb
+          # pkgs.llvmPackages_latest.libllvm
+          # pkgs.llvmPackages_latest.libcxx
+          # pkgs.llvmPackages_latest.clang
+        ];
+        shellHook = ''
+          exec nu
+        '';
       };
-   };
+    };
 }
