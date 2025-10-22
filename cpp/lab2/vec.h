@@ -1,33 +1,75 @@
 #pragma once
 
 #include "log.h"
-#include <cstdlib>
 
-template <typename E> struct DynArray {
-   E *data;
-   size_t len;
-   size_t cap;
-
-   DynArray() : data(nullptr), len(0), cap(0) {}
-   ~DynArray() { free(data); }
-
-   void push(E x) {
-      if (len >= cap) {
-         size_t newcap = cap ? cap * 2 : 4;
-         E *tmp = (E *)realloc(data, newcap * sizeof(E));
-         if (!tmp) {
-            log(LogLevel::ERROR, "DynArray realloc failed");
-            return;
-         }
-         data = tmp;
-         cap = newcap;
-      }
-      data[len++] = x;
-   }
+template <typename T> class Vector {
+ private:
+   T *vec;
+   unsigned capacity;
+   unsigned count;
 
    void clear() {
-      free(data);
-      data = nullptr;
-      len = cap = 0;
+      delete[] vec;
+      capacity = 0;
+      count = 0;
    }
+
+ public:
+   Vector() = default;
+   ~Vector() { clear(); }
+
+   void push(const T &el) {
+      if (count == capacity) {
+         unsigned newCap = capacity ? capacity * 2 : 4;
+         T *newVec = new T[newCap];
+
+         delete[] vec;
+
+         vec = newVec;
+         capacity = newCap;
+      }
+      vec[count++] = el;
+   }
+   void push(const T &el, unsigned idx) {
+      if (idx > count) idx = count;
+
+      if (count == capacity) {
+         unsigned newCap = capacity ? capacity * 2 : 4;
+         T *newVec = new T[newCap];
+
+         for (unsigned i = 0; i < count; i++) newVec[i] = vec[i];
+         delete[] vec;
+
+         vec = newVec;
+         capacity = newCap;
+      }
+
+      for (unsigned i = count; i > idx; i--) vec[i] = vec[i - 1];
+
+      vec[idx] = el;
+      count++;
+   }
+
+   T pop() {
+      T el = vec[--count];
+      return el;
+   }
+   T pop(unsigned idx) {
+      if (idx >= count) return nullptr;
+      T &el = vec[idx];
+
+      for (unsigned i = idx; i < count - 1; i++) vec[i] = vec[i + 1];
+
+      vec[count - 1] = nullptr;
+      count--;
+
+      return el;
+   }
+
+   T *get(unsigned idx) const {
+      if (idx >= count) return nullptr;
+      return &vec[idx];
+   }
+
+   unsigned len() const { return count; }
 };

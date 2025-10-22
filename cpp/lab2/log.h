@@ -1,13 +1,12 @@
 #pragma once
 
-#include <cstdarg>
-#include <cstdio>
+#include <iostream>
 
-#define DEBUG_COLOR "\033[36m"
-#define INFO_COLOR "\033[32m"
-#define WARN_COLOR "\033[33m"
-#define ERROR_COLOR "\033[31m"
-#define RESET_COLOR "\033[0m"
+constexpr const char *DEBUG_COLOR = "\033[36m";
+constexpr const char *INFO_COLOR = "\033[32m";
+constexpr const char *WARN_COLOR = "\033[33m";
+constexpr const char *ERROR_COLOR = "\033[31m";
+constexpr const char *RESET_COLOR = "\033[0m";
 
 enum class LogLevel {
    INFO,
@@ -15,7 +14,7 @@ enum class LogLevel {
    ERROR,
 };
 
-inline void log(LogLevel level, const char *__restrict format, ...) {
+inline void log(LogLevel level, const std::string &msg) {
    const char *color;
    const char *prefix;
 
@@ -38,12 +37,5 @@ inline void log(LogLevel level, const char *__restrict format, ...) {
       break;
    }
 
-   printf("%s%s%s ", color, prefix, RESET_COLOR);
-
-   va_list args;
-   va_start(args, format);
-   vprintf(format, args);
-   va_end(args);
-
-   printf("\n");
+   std::cout << color << prefix << RESET_COLOR << " " << msg << std::endl;
 }

@@ -4,6 +4,7 @@
 *.iso
 *.qcow
 *.vbox*
+*.bak
 
 .ccls-cache/
 
