@@ -23,6 +23,7 @@ template <typename T> class Vector {
          unsigned newCap = capacity ? capacity * 2 : 4;
          T *newVec = new T[newCap];
 
+         for (unsigned i = 0; i < count; i++) newVec[i] = vec[i];
          delete[] vec;
 
          vec = newVec;
@@ -72,4 +73,5 @@ template <typename T> class Vector {
    }
 
    unsigned len() const { return count; }
+   unsigned cap() const { return capacity; }
 };

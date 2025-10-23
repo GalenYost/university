@@ -49,10 +49,9 @@ InputValue readInputCastValue(InputType type) {
    return val;
 }
 
-typedef void (*Callback)(void *ctx);
 typedef struct {
    void *env;
-   Callback cb;
+   void (*cb)(void *);
 } Closure;
 
 typedef struct {

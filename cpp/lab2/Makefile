@@ -4,7 +4,7 @@ FILE_EXT := cpp
 BUILD_DIR := build
 DEBUG_BUILD_DIR := debug
 CXX ?= g++
-CXXFLAGS ?= -Wall -Wextra -O2
+CXXFLAGS ?= -O2 -I.
 DEBUG_FLAGS ?= -g -O0
 EXE ?= app
 DEBUG_EXE := $(DEBUG_BUILD_DIR)/$(EXE)
@@ -37,6 +37,9 @@ build:
 
 debug:
 	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DDEBUG_MODE"
+
+test:
+	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DTEST_MODE"
 
 execute: all
 	@./$(EXE)

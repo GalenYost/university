@@ -62,7 +62,7 @@ template <typename T> class BinaryTree {
  private:
    Node<T> *head = nullptr;
    Node<T> *cur_ptr = nullptr;
-   Vector<Node<T> *> path;
+   Vector<Node<T> *> path = Vector<Node<T> *>();
 
    BinaryTree(Node<T> *node) : head(node), cur_ptr(node) {}
 
@@ -73,12 +73,15 @@ template <typename T> class BinaryTree {
       delete node;
    }
 
-   Node<T> *getNthNode(Node<T> *node, int &index) const {
+   Node<T> *getNthNode(Node<T> *node, unsigned &index) const {
       if (!node) return nullptr;
-      Node<T> *left = getNthNode(node->left, index);
-      if (left) return left;
+
+      Node<T> *found = getNthNode(node->left, index);
+      if (found) return found;
+
       if (index == 0) return node;
       index--;
+
       return getNthNode(node->right, index);
    }
 
@@ -86,6 +89,11 @@ template <typename T> class BinaryTree {
       if (path.len() == 0) return nullptr;
       Node<T> **last = path.get(path.len() - 1);
       return last ? *last : nullptr;
+   }
+
+   void replaceSubtree(Node<T> *&ptr, Node<T> *newNode) {
+      if (ptr) { clear(ptr); }
+      ptr = newNode;
    }
 
    void displayIndented(Node<T> *node, int depth) {
@@ -164,7 +172,7 @@ template <typename T> class BinaryTree {
       Node<T> *result = getNthNode(head, n);
       if (!result) {
          log(LogLevel::ERROR, "BinaryTree index out of range");
-         throw std::out_of_range("BinaryTree index out of range");
+         std::exit(0);
       }
       return result->val;
    }
@@ -219,12 +227,10 @@ template <typename T> class BinaryTree {
 
       switch (dir) {
       case Direction::LEFT:
-         if (cur_ptr->left) clear(cur_ptr->left);
-         cur_ptr->left = newNode;
+         replaceSubtree(cur_ptr->left, newNode);
          break;
       case Direction::RIGHT:
-         if (cur_ptr->right) clear(cur_ptr->right);
-         cur_ptr->right = newNode;
+         replaceSubtree(cur_ptr->right, newNode);
          break;
       default:
          log(LogLevel::WARN, "Only 'left' and 'right' are possible");
@@ -294,27 +300,25 @@ template <typename T> class BinaryTree {
       displayIndented(head, 0);
    }
 
-   void saveToFile(const std::string &filename, Node<T> *node) {
+   void saveToFile(const std::string &filename) {
       std::ofstream out(filename);
       if (!out.is_open()) {
          log(LogLevel::ERROR, "Cannot open file for writing: " + filename);
          return;
       }
-      saveNode(out, node);
+      saveNode(out, head);
       out.close();
    }
 
-   Node<T> *loadFromFile(const std::string &filename,
-                         Node<T> **curPtr = nullptr) {
+   void loadFromFile(const std::string &filename) {
       std::ifstream in(filename);
       if (!in.is_open()) {
          log(LogLevel::ERROR, "Cannot open file for reading: " + filename);
-         return nullptr;
+         return;
       }
-      Node<T> *newHead = loadNode(in);
+      head = loadNode(in);
+      cur_ptr = head;
       in.close();
-      if (curPtr) *curPtr = newHead;
-      return newHead;
    }
 
    void sortTree(Node<T> **headPtr) {
@@ -329,6 +333,16 @@ template <typename T> class BinaryTree {
       FindCtx<T> ctx{value, nullptr};
       traverse(head, findCallback<T>, &ctx);
       return fromNode(ctx.found);
+   }
+
+   T get(unsigned idx) {
+      Node<T> *node = getNthNode(head, idx);
+      if (!node) {
+         log(LogLevel::ERROR, "Not found");
+         std::exit(0);
+      } else {
+         return node->val;
+      }
    }
 
    bool empty() const { return head == nullptr; }
