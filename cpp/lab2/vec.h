@@ -15,7 +15,7 @@ template <typename T> class Vector {
    }
 
  public:
-   Vector() = default;
+   Vector() : vec(nullptr), capacity(0), count(0) {}
    ~Vector() { clear(); }
 
    void push(const T &el) {
@@ -53,17 +53,6 @@ template <typename T> class Vector {
 
    T pop() {
       T el = vec[--count];
-      return el;
-   }
-   T pop(unsigned idx) {
-      if (idx >= count) return nullptr;
-      T &el = vec[idx];
-
-      for (unsigned i = idx; i < count - 1; i++) vec[i] = vec[i + 1];
-
-      vec[count - 1] = nullptr;
-      count--;
-
       return el;
    }
 

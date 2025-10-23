@@ -57,6 +57,19 @@ void move_fn(void *env) {
    bt->movePtr(dir);
 }
 
+void sort_fn(void *env) {
+   BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
+
+   std::cout << "Order (0 - descending, 1 - ascending): " << std::flush;
+   InputValue ascending = readInputCastValue(InputType::BOOL);
+
+   if (ascending.b == 0) {
+      bt->sortTree(false);
+   } else {
+      bt->sortTree();
+   }
+}
+
 void reset_fn(void *env) {
    BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
    *bt = BinaryTree<int>();
@@ -93,6 +106,7 @@ int main(void) {
    Closure exit_cl = {.cb = exit_fn};
    Closure insert_cl = {&bt, insert_fn};
    Closure move_cl = {&bt, move_fn};
+   Closure sort_cl = {&bt, sort_fn};
    Closure reset_cl = {&bt, reset_fn};
    Closure read_cl = {&bt, read_fn};
    Closure write_cl = {&bt, write_fn};
@@ -102,6 +116,7 @@ int main(void) {
    ib.bind('e', "exit", exit_cl)
        .bind('i', "insert", insert_cl)
        .bind('m', "move", move_cl)
+       .bind('s', "sort", sort_cl)
        .bind('c', "clear", reset_cl)
        .bind('r', "read", read_cl)
        .bind('w', "write", write_cl)

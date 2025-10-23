@@ -33,7 +33,8 @@ int cmpInt(const void *a, const void *b) {
 template <typename T> Node<T> *buildBST(Vector<T> *vec, int l, int r) {
    if (l > r) return nullptr;
    int mid = l + (r - l) / 2;
-   Node<T> *node = new Node<T>(vec->get(mid));
+
+   Node<T> *node = new Node<T>(*vec->get(mid));
    node->left = buildBST(vec, l, mid - 1);
    node->right = buildBST(vec, mid + 1, r);
    return node;
@@ -56,6 +57,29 @@ template <typename T> void findCallback(void *env, Node<T> *node) {
    FindCtx<T> *ctx = (FindCtx<T> *)env;
    if (ctx->found) return;
    if (node->val == ctx->value) { ctx->found = copySubtree(node); }
+}
+
+template <typename T> void quicksort(Vector<T> *vec, int l, int r) {
+   if (l >= r) return;
+
+   T pivot = *vec->get(r);
+   int i = l - 1;
+
+   for (int j = l; j < r; ++j) {
+      if (*vec->get(j) <= pivot) {
+         ++i;
+         T temp = *vec->get(i);
+         *vec->get(i) = *vec->get(j);
+
+         *vec->get(j) = temp;
+      }
+   }
+   T temp = *vec->get(i + 1);
+   *vec->get(i + 1) = *vec->get(r);
+   *vec->get(r) = temp;
+
+   quicksort(vec, l, i);
+   quicksort(vec, i + 2, r);
 }
 
 template <typename T> class BinaryTree {
@@ -321,18 +345,36 @@ template <typename T> class BinaryTree {
       in.close();
    }
 
-   void sortTree(Node<T> **headPtr) {
-      Vector<T> values;
-      collectValues(*headPtr, &values);
-      qsort(values.vec, values.len(), sizeof(T), cmpInt);
-      clear(*headPtr);
-      *headPtr = buildBST(&values, 0, values.len() - 1);
-   }
-
    BinaryTree<T> find(T value) {
       FindCtx<T> ctx{value, nullptr};
       traverse(head, findCallback<T>, &ctx);
       return fromNode(ctx.found);
+   }
+
+   void sortTree(bool ascending = true) {
+      if (!head) return;
+
+      Vector<T> values;
+      collectValues(head, &values);
+
+      if (values.len() == 0) return;
+
+      quicksort(&values, 0, values.len() - 1);
+
+      if (!ascending) {
+         for (unsigned i = 0, j = values.len() - 1; i < j; ++i, --j) {
+            T temp = *values.get(i);
+            *values.get(i) = *values.get(j);
+            *values.get(j) = temp;
+         }
+      }
+
+      Node<T> *newHead = buildBST(&values, 0, values.len() - 1);
+
+      clear(head);
+      head = newHead;
+      cur_ptr = head;
+      path = Vector<Node<T> *>();
    }
 
    T get(unsigned idx) {

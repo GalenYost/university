@@ -40,9 +40,31 @@ void test_tree() {
    assert(bt.get(2) == 3, "right isnt equal to 3");
 }
 
+void test_sort_tree() {
+   BinaryTree<int> bt = BinaryTree<int>();
+   bt.insertHead(10);
+   bt.insertUnderPointer(100, Direction::LEFT);
+   bt.insertUnderPointer(80, Direction::RIGHT);
+   bt.movePtr(Direction::LEFT);
+   bt.insertUnderPointer(70, Direction::LEFT);
+   bt.insertUnderPointer(110, Direction::RIGHT);
+
+   std::cout << "Initial tree:" << std::endl;
+   bt.displayTree();
+
+   bt.sortTree();
+   std::cout << "Sorted (ascending):" << std::endl;
+   bt.displayTree();
+
+   bt.sortTree(false);
+   std::cout << "Sorted (descending):" << std::endl;
+   bt.displayTree();
+}
+
 int main(void) {
    test_vec();
    test_tree();
+   test_sort_tree();
 }
 
 #endif
