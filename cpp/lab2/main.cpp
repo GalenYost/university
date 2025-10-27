@@ -19,16 +19,7 @@ void insert_fn(void *env) {
    std::cout << "Value (int): " << std::flush;
    InputValue val_input = readInputCastValue(InputType::INT);
 
-   if (dir_input.str == "left") {
-      bt->insertUnderPointer(val_input.i, Direction::LEFT);
-   } else if (dir_input.str == "right") {
-      bt->insertUnderPointer(val_input.i, Direction::RIGHT);
-   } else if (dir_input.str == "head") {
-      bt->insertHead(val_input.i);
-   } else {
-      log(LogLevel::ERROR, "Wrong input");
-      return;
-   }
+   *bt + std::make_pair(val_input.i, dir_input.str);
 }
 void move_fn(void *env) {
    BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
@@ -39,22 +30,7 @@ void move_fn(void *env) {
    std::transform(dir_input.str.begin(), dir_input.str.end(),
                   dir_input.str.begin(), ::tolower);
 
-   Direction dir;
-
-   if (dir_input.str == "left") {
-      dir = Direction::LEFT;
-   } else if (dir_input.str == "right") {
-      dir = Direction::RIGHT;
-   } else if (dir_input.str == "head") {
-      dir = Direction::HEAD;
-   } else if (dir_input.str == "up") {
-      dir = Direction::UP;
-   } else {
-      log(LogLevel::ERROR, "Wrong input");
-      return;
-   }
-
-   bt->movePtr(dir);
+   *bt ^ dir_input.str;
 }
 
 void sort_fn(void *env) {
@@ -81,7 +57,7 @@ void read_fn(void *env) {
    std::cout << "Filename (with extension): " << std::flush;
    InputValue fname = readInputCastValue(InputType::STR);
 
-   bt->loadFromFile(fname.str);
+   fname.str >> *bt;
 }
 
 void write_fn(void *env) {
@@ -90,18 +66,32 @@ void write_fn(void *env) {
    std::cout << "Filename (with extension): " << std::flush;
    InputValue fname = readInputCastValue(InputType::STR);
 
-   bt->saveToFile(fname.str);
+   fname.str << *bt;
 }
 
 void display_fn(void *env) {
    std::cout << std::endl;
    BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
-   bt->displayTree();
+
+   log(LogLevel::INFO, "Current tree:");
+   std::cout << *bt;
+   std::cout << std::endl;
+}
+
+void get_fn(void *env) {
+   std::cout << std::endl;
+   BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
+
+   std::cout << "Index: " << std::flush;
+   InputValue idx = readInputCastValue(InputType::INT);
+
+   int val = (*bt)[idx.i];
+   std::cout << val << std::endl;
    std::cout << std::endl;
 }
 
 int main(void) {
-   BinaryTree<int> bt;
+   BinaryTree<int> bt = BinaryTree<int>();
 
    Closure exit_cl = {.cb = exit_fn};
    Closure insert_cl = {&bt, insert_fn};
@@ -111,6 +101,7 @@ int main(void) {
    Closure read_cl = {&bt, read_fn};
    Closure write_cl = {&bt, write_fn};
    Closure display_cl = {&bt, display_fn};
+   Closure get_cl = {&bt, get_fn};
 
    InputBuffer ib = InputBuffer();
    ib.bind('e', "exit", exit_cl)
@@ -120,6 +111,7 @@ int main(void) {
        .bind('c', "clear", reset_cl)
        .bind('r', "read", read_cl)
        .bind('w', "write", write_cl)
+       .bind('g', "get", get_cl)
        .bind('d', "display tree", display_cl);
 
    do {

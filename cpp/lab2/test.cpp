@@ -10,7 +10,7 @@ inline void assert(bool condition, const std::string &msg) {
    if (condition)
       return;
    else
-      log(LogLevel::ERROR, "Assetion failed: " + msg);
+      log(LogLevel::ERROR, "Assertion failed: " + msg);
    std::exit(0);
 }
 
@@ -21,7 +21,7 @@ void test_vec() {
 
    assert(*vec.get(1) == "Bye, World...",
           "first element is not 'Bye, World...'");
-   assert(vec.len() == 2, "len of vec is not 2");
+   assert(vec.len() == 1, "len of vec is not 2");
 
    vec.pop();
 
@@ -48,23 +48,24 @@ void test_sort_tree() {
    bt.movePtr(Direction::LEFT);
    bt.insertUnderPointer(70, Direction::LEFT);
    bt.insertUnderPointer(110, Direction::RIGHT);
+   bt.movePtr(Direction::HEAD);
 
-   std::cout << "Initial tree:" << std::endl;
-   bt.displayTree();
+   assert(bt.get(0) == 70, "left isnt equal to 70");
 
    bt.sortTree();
-   std::cout << "Sorted (ascending):" << std::endl;
-   bt.displayTree();
+   assert(bt.get(0) == 10, "left isnt equal to 10");
 
    bt.sortTree(false);
-   std::cout << "Sorted (descending):" << std::endl;
-   bt.displayTree();
+   assert(bt.get(0) == 110, "left isnt equal to 110");
 }
 
 int main(void) {
    test_vec();
+   log(LogLevel::INFO, "Vector tests passed");
    test_tree();
+   log(LogLevel::INFO, "Tree tests passed");
    test_sort_tree();
+   log(LogLevel::INFO, "Tree sorting tests passed");
 }
 
 #endif

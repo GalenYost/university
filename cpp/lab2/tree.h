@@ -88,8 +88,6 @@ template <typename T> class BinaryTree {
    Node<T> *cur_ptr = nullptr;
    Vector<Node<T> *> path = Vector<Node<T> *>();
 
-   BinaryTree(Node<T> *node) : head(node), cur_ptr(node) {}
-
    void clear(Node<T> *node) {
       if (!node) return;
       clear(node->left);
@@ -120,19 +118,19 @@ template <typename T> class BinaryTree {
       ptr = newNode;
    }
 
-   void displayIndented(Node<T> *node, int depth) {
+   void displayIndented(std::ostream &out, Node<T> *node, int depth) const {
       if (!node) return;
-      displayIndented(node->right, depth + 1);
-      for (int i = 0; i < depth; ++i) std::cout << "\t";
+      displayIndented(out, node->right, depth + 1);
+      for (int i = 0; i < depth; ++i) out << "\t";
       if (node == cur_ptr) {
-         std::cout << DEBUG_COLOR << node->val << RESET_COLOR << "\n";
+         out << DEBUG_COLOR << node->val << RESET_COLOR << "\n";
       } else {
-         std::cout << node->val << "\n";
+         out << node->val << "\n";
       }
-      displayIndented(node->left, depth + 1);
+      displayIndented(out, node->left, depth + 1);
    }
 
-   void saveNode(std::ofstream &out, Node<T> *node) {
+   void saveNode(std::ostream &out, Node<T> *node) const {
       if (!node) {
          out << "# ";
          return;
@@ -142,7 +140,7 @@ template <typename T> class BinaryTree {
       saveNode(out, node->right);
    }
 
-   Node<T> *loadNode(std::ifstream &in) {
+   Node<T> *loadNode(std::istream &in) const {
       std::string token;
       if (!(in >> token)) {
          log(LogLevel::ERROR, "EOF while reading tree");
@@ -183,8 +181,8 @@ template <typename T> class BinaryTree {
 
  public:
    BinaryTree() = default;
-
    BinaryTree(const BinaryTree &other) { head = copySubtree(other.head); }
+   BinaryTree(Node<T> *node) : head(node), cur_ptr(node) {}
 
    ~BinaryTree() {
       clear(head);
@@ -192,7 +190,7 @@ template <typename T> class BinaryTree {
       cur_ptr = nullptr;
    }
 
-   const T &operator[](int n) const {
+   const T &operator[](unsigned n) const {
       Node<T> *result = getNthNode(head, n);
       if (!result) {
          log(LogLevel::ERROR, "BinaryTree index out of range");
@@ -225,49 +223,92 @@ template <typename T> class BinaryTree {
       return *this;
    }
 
-   static BinaryTree fromNode(Node<T> *node) { return BinaryTree(node); }
-
-   void insertHead(T value, bool left = true) {
-      Node<T> *new_head = new Node<T>(value);
-      if (left)
-         new_head->left = head;
-      else
-         new_head->right = head;
-      head = new_head;
-      cur_ptr = head;
+   friend std::ostream &operator<<(std::ostream &out,
+                                   const BinaryTree<T> &tree) {
+      tree.displayIndented(out, tree.head, 0);
+      return out;
    }
 
-   bool insertUnderPointer(T value, Direction dir) {
-      if (!cur_ptr) {
-         if (!head) {
-            insertHead(value, true);
-            return true;
-         } else {
-            movePtr(Direction::HEAD);
-         }
+   friend std::istream &operator>>(std::istream &in, BinaryTree<T> &tree) {
+      tree.head = tree.loadNode(in);
+      tree.cur_ptr = tree.head;
+      return in;
+   }
+
+   friend const BinaryTree<T> &operator<<(const std::string &filename,
+                                          const BinaryTree<T> &tree) {
+      std::ofstream out(filename);
+      if (!out.is_open()) {
+         log(LogLevel::ERROR, "Cannot open file for writing: " + filename);
+         return tree;
       }
+      tree.saveNode(out, tree.head);
+      return tree;
+   }
 
-      Node<T> *newNode = new Node<T>(value);
+   friend const BinaryTree<T> &operator>>(const std::string &filename,
+                                          BinaryTree<T> &tree) {
+      std::ifstream in(filename);
+      if (!in.is_open()) {
+         log(LogLevel::ERROR, "Cannot open file for reading: " + filename);
+         return tree;
+      }
+      tree.head = tree.loadNode(in);
+      tree.cur_ptr = tree.head;
+      return tree;
+   }
 
-      switch (dir) {
+   BinaryTree<T> &operator+(std::pair<T, Direction> p) {
+      if (!cur_ptr) { *this ^ Direction::HEAD; }
+
+      Node<T> *newNode = new Node<T>(p.first);
+
+      switch (p.second) {
       case Direction::LEFT:
          replaceSubtree(cur_ptr->left, newNode);
          break;
       case Direction::RIGHT:
          replaceSubtree(cur_ptr->right, newNode);
          break;
+      case Direction::HEAD: {
+         Node<T> *new_head = new Node<T>(p.first);
+         new_head->left = head;
+         head = new_head;
+         cur_ptr = head;
+         break;
+      }
       default:
-         log(LogLevel::WARN, "Only 'left' and 'right' are possible");
+         log(LogLevel::WARN, "Only 'left', 'right' and 'head' are possible");
          delete newNode;
          break;
       }
-      return true;
+      return *this;
+   }
+   BinaryTree<T> &operator+(std::pair<T, std::string> p) {
+      if (!cur_ptr) { *this ^ Direction::HEAD; }
+
+      Node<T> *newNode = new Node<T>(p.first);
+
+      if (p.second == "left") {
+         replaceSubtree(cur_ptr->left, newNode);
+      } else if (p.second == "right") {
+         replaceSubtree(cur_ptr->right, newNode);
+      } else if (p.second == "head") {
+         Node<T> *new_head = new Node<T>(p.first);
+         new_head->left = head;
+         head = new_head;
+         cur_ptr = head;
+      } else {
+         log(LogLevel::WARN, "Only 'left', 'right' and 'head' are possible");
+         delete newNode;
+      }
+      return *this;
    }
 
-   void movePtr(Direction dir) {
+   BinaryTree<T> &operator^(Direction dir) {
       if (!cur_ptr) {
          log(LogLevel::WARN, "Dropping call, no current pointer");
-         return;
+         return *this;
       }
 
       switch (dir) {
@@ -303,46 +344,45 @@ template <typename T> class BinaryTree {
          path = Vector<Node<T> *>();
          break;
       }
-   }
 
-   void displayCurrent() {
-      if (empty()) {
-         log(LogLevel::INFO, "Tree is empty");
-         return;
-      }
-      if (!cur_ptr) movePtr(Direction::HEAD);
-      log(LogLevel::INFO,
-          "Current pointer value: " + std::to_string(cur_ptr->val));
+      return *this;
    }
-
-   void displayTree() {
-      if (empty()) {
-         log(LogLevel::INFO, "Tree is empty");
-         return;
+   BinaryTree<T> &operator^(const std::string &dir) {
+      if (!cur_ptr) {
+         log(LogLevel::WARN, "Dropping call, no current pointer");
+         return *this;
       }
-      log(LogLevel::INFO, "Current tree structure:");
-      displayIndented(head, 0);
-   }
 
-   void saveToFile(const std::string &filename) {
-      std::ofstream out(filename);
-      if (!out.is_open()) {
-         log(LogLevel::ERROR, "Cannot open file for writing: " + filename);
-         return;
+      if (dir == "up") {
+         if (path.len() > 0) {
+            cur_ptr = safeGetLastPath();
+            if (cur_ptr)
+               path.pop();
+            else
+               log(LogLevel::WARN, "Path is empty");
+         } else {
+            log(LogLevel::WARN, "Path is empty");
+         }
+      } else if (dir == "left") {
+         if (cur_ptr->left) {
+            path.push(cur_ptr);
+            cur_ptr = cur_ptr->left;
+         } else {
+            log(LogLevel::WARN, "Left element doesn't exist");
+         }
+      } else if (dir == "right") {
+         if (cur_ptr->right) {
+            path.push(cur_ptr);
+            cur_ptr = cur_ptr->right;
+         } else {
+            log(LogLevel::WARN, "Right element doesn't exist");
+         }
+      } else {
+         cur_ptr = head;
+         path = Vector<Node<T> *>();
       }
-      saveNode(out, head);
-      out.close();
-   }
 
-   void loadFromFile(const std::string &filename) {
-      std::ifstream in(filename);
-      if (!in.is_open()) {
-         log(LogLevel::ERROR, "Cannot open file for reading: " + filename);
-         return;
-      }
-      head = loadNode(in);
-      cur_ptr = head;
-      in.close();
+      return *this;
    }
 
    BinaryTree<T> find(T value) {
@@ -375,16 +415,6 @@ template <typename T> class BinaryTree {
       head = newHead;
       cur_ptr = head;
       path = Vector<Node<T> *>();
-   }
-
-   T get(unsigned idx) {
-      Node<T> *node = getNthNode(head, idx);
-      if (!node) {
-         log(LogLevel::ERROR, "Not found");
-         std::exit(0);
-      } else {
-         return node->val;
-      }
    }
 
    bool empty() const { return head == nullptr; }
