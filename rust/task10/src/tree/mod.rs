@@ -1,6 +1,7 @@
 pub mod balance;
 pub mod search;
 
+use balance::Balance;
 use search::Traversal;
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -63,28 +64,26 @@ impl<T> Node<T> {
         }
     }
 
-    fn collect_height(&self) -> usize {
+    pub fn update_height(&mut self) -> usize {
         let left_height = self
             .left
             .as_ref()
-            .map(|n| n.borrow().collect_height())
+            .map(|n| n.borrow_mut().update_height())
             .unwrap_or(0);
 
         let right_height = self
             .right
             .as_ref()
-            .map(|n| n.borrow().collect_height())
+            .map(|n| n.borrow_mut().update_height())
             .unwrap_or(0);
 
-        1 + left_height.max(right_height)
+        let height = 1 + left_height.max(right_height);
+        self.height = height;
+        height
     }
 
     pub fn height(&self) -> usize {
         self.height
-    }
-
-    pub fn update_height(&mut self) -> () {
-        self.height = self.collect_height();
     }
 
     pub fn balance_factor(&self) -> i8 {
@@ -195,6 +194,10 @@ where
         self
     }
 
+    pub fn rebalance(&mut self) -> () {
+        self.head = Some(Balance::<T>::rebalance(self.head.take().unwrap()));
+    }
+
     pub fn search_for(&self, value: T, order: SearchOrder) -> Vec<T>
     where
         T: PartialEq,
@@ -300,5 +303,5 @@ fn node_height() {
         .borrow_mut()
         .right = rc(3);
 
-    assert_eq!(nd1.collect_height(), 4);
+    assert_eq!(nd1.update_height(), 4);
 }
