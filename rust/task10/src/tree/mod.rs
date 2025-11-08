@@ -126,6 +126,7 @@ where
                 _ => println!("Only LEFT and RIGHT are possible"),
             }
         }
+        self.rebalance();
         self
     }
 
@@ -138,6 +139,7 @@ where
                 _ => println!("Only LEFT and RIGHT are possible"),
             }
         }
+        self.rebalance();
         self
     }
 

@@ -3,11 +3,14 @@ MAKEFLAGS += --no-print-directory
 FILE_EXT := cpp
 BUILD_DIR := build
 DEBUG_BUILD_DIR := debug
+
 CXX ?= g++
-CXXFLAGS ?= -O2 -I.
+CXXFLAGS ?= -O2 -I. -std=c++23
 DEBUG_FLAGS ?= -g -O0
+
 EXE ?= app
 DEBUG_EXE := $(DEBUG_BUILD_DIR)/$(EXE)
+
 FILES := $(wildcard *.$(FILE_EXT))
 SRC := $(notdir $(FILES))
 OBJS := $(patsubst %.$(FILE_EXT),$(BUILD_DIR)/%.o,$(SRC))

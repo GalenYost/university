@@ -1,4 +1,4 @@
-IndentWidth: 3
+IndentWidth: 4
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
