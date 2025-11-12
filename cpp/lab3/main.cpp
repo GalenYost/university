@@ -1,3 +1,4 @@
+#include <fstream>
 #include <print>
 #ifndef TEST_MODE
 
@@ -55,10 +56,25 @@ void reset_fn(void *env) {
 void read_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
-    std::cout << "Filename (with extension): " << std::flush;
-    InputValue fname = readInputCastValue(InputType::STR);
+    std::cout << "Input stream (file/console): " << std::flush;
+    InputValue stream = readInputCastValue(InputType::STR);
 
-    bt->load(fname.str);
+    std::transform(stream.str.begin(), stream.str.end(), stream.str.begin(),
+                   ::tolower);
+
+    if (stream.str == "file") {
+        std::cout << "Filename (with extension): " << std::flush;
+        InputValue fname = readInputCastValue(InputType::STR);
+
+        std::ifstream in(fname.str);
+        in >> *bt;
+    } else if (stream.str == "console") {
+        log(LogLevel::WARN, "# - null, pattern: 1 # # (1 - center, # - left, # "
+                            "- right), # MUST BE SPECIFIED IF NULL");
+        std::cout << "Inline input: " << std::flush;
+        std::cin >> *bt;
+    } else
+        std::cout << "Unknown option" << std::endl;
 }
 
 void write_fn(void *env) {
@@ -67,7 +83,8 @@ void write_fn(void *env) {
     std::cout << "Filename (with extension): " << std::flush;
     InputValue fname = readInputCastValue(InputType::STR);
 
-    bt->save(fname.str);
+    std::ofstream out(fname.str);
+    out << *bt;
 }
 
 void display_fn(void *env) {
@@ -93,32 +110,42 @@ void get_fn(void *env) {
 
 int main(void) {
     BinaryTree<int> bt = BinaryTree<int>();
+    std::cout << "Inline input: " << std::flush;
+    std::cin >> bt;
+    std::cout << std::endl;
 
-    Closure exit_cl = {.cb = exit_fn};
-    Closure insert_cl = {&bt, insert_fn};
-    Closure move_cl = {&bt, move_fn};
-    Closure sort_cl = {&bt, sort_fn};
-    Closure reset_cl = {&bt, reset_fn};
-    Closure read_cl = {&bt, read_fn};
-    Closure write_cl = {&bt, write_fn};
-    Closure display_cl = {&bt, display_fn};
-    Closure get_cl = {&bt, get_fn};
-
-    InputBuffer ib = InputBuffer();
-    ib.bind('e', "exit", exit_cl)
-        .bind('i', "insert", insert_cl)
-        .bind('m', "move", move_cl)
-        .bind('s', "sort", sort_cl)
-        .bind('c', "clear", reset_cl)
-        .bind('r', "read", read_cl)
-        .bind('w', "write", write_cl)
-        .bind('g', "get", get_cl)
-        .bind('d', "display tree", display_cl);
-
-    do {
-        ib.prompt("Options:");
-        ib.awaitInput("Choice: ");
-    } while (true);
+    std::cout << bt << std::endl;
+    std::cout << bt(2, 0) << std::endl;
 }
+
+// int main(void) {
+//     BinaryTree<int> bt = BinaryTree<int>();
+//
+//     Closure exit_cl = {.cb = exit_fn};
+//     Closure insert_cl = {&bt, insert_fn};
+//     Closure move_cl = {&bt, move_fn};
+//     Closure sort_cl = {&bt, sort_fn};
+//     Closure reset_cl = {&bt, reset_fn};
+//     Closure read_cl = {&bt, read_fn};
+//     Closure write_cl = {&bt, write_fn};
+//     Closure display_cl = {&bt, display_fn};
+//     Closure get_cl = {&bt, get_fn};
+//
+//     InputBuffer ib = InputBuffer();
+//     ib.bind('e', "exit", exit_cl)
+//         .bind('i', "insert", insert_cl)
+//         .bind('m', "move", move_cl)
+//         .bind('s', "sort", sort_cl)
+//         .bind('c', "clear", reset_cl)
+//         .bind('r', "read", read_cl)
+//         .bind('w', "write", write_cl)
+//         .bind('g', "get", get_cl)
+//         .bind('d', "display tree", display_cl);
+//
+//     do {
+//         ib.prompt("Options:");
+//         ib.awaitInput("Choice: ");
+//     } while (true);
+// }
 
 #endif

@@ -5,6 +5,7 @@
 *.qcow
 *.vbox*
 *.bak
+*.txt
 
 .ccls-cache/
 

@@ -7,6 +7,24 @@ Vector<T>::Vector() : vec(nullptr), capacity(0), count(0) {}
 
 template <typename T> Vector<T>::~Vector() { clear(); }
 
+template <typename T> Vector<T>::Vector(const Vector &other) {
+    count = other.count;
+    capacity = other.capacity;
+    vec = new T[capacity];
+    for (unsigned i = 0; i < count; ++i) vec[i] = other.vec[i];
+}
+
+template <typename T> Vector<T> &Vector<T>::operator=(const Vector &other) {
+    if (this != &other) {
+        delete[] vec;
+        count = other.count;
+        capacity = other.capacity;
+        vec = new T[capacity];
+        for (unsigned i = 0; i < count; ++i) vec[i] = other.vec[i];
+    }
+    return *this;
+}
+
 template <typename T> void Vector<T>::clear() {
     delete[] vec;
     capacity = 0;
@@ -51,6 +69,11 @@ template <typename T> T Vector<T>::pop() {
     return el;
 }
 
+template <typename T> T &Vector<T>::operator[](unsigned i) { return vec[i]; }
+template <typename T> const T &Vector<T>::operator[](unsigned i) const {
+    return vec[i];
+}
+
 template <typename T> T *Vector<T>::get(unsigned idx) const {
     if (idx >= count) return nullptr;
     return &vec[idx];
@@ -58,6 +81,7 @@ template <typename T> T *Vector<T>::get(unsigned idx) const {
 
 template <typename T> unsigned Vector<T>::len() const { return count; }
 template <typename T> unsigned Vector<T>::cap() const { return capacity; }
+template <typename T> bool Vector<T>::empty() const { return count == 0; }
 
 template class Vector<int>;
 template class Vector<char>;

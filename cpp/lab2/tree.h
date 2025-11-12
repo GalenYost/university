@@ -40,23 +40,12 @@ template <typename T> Node<T> *buildBST(Vector<T> *vec, int l, int r) {
    return node;
 }
 
-template <typename T> struct FindCtx {
-   T value;
-   Node<T> *found = nullptr;
-};
-
 template <typename T> Node<T> *copySubtree(Node<T> *node) {
    if (!node) return nullptr;
    Node<T> *newNode = new Node<T>(node->val);
    newNode->left = copySubtree(node->left);
    newNode->right = copySubtree(node->right);
    return newNode;
-}
-
-template <typename T> void findCallback(void *env, Node<T> *node) {
-   FindCtx<T> *ctx = (FindCtx<T> *)env;
-   if (ctx->found) return;
-   if (node->val == ctx->value) { ctx->found = copySubtree(node); }
 }
 
 template <typename T> void quicksort(Vector<T> *vec, int l, int r) {
@@ -383,12 +372,6 @@ template <typename T> class BinaryTree {
       }
 
       return *this;
-   }
-
-   BinaryTree<T> find(T value) {
-      FindCtx<T> ctx{value, nullptr};
-      traverse(head, findCallback<T>, &ctx);
-      return fromNode(ctx.found);
    }
 
    void sortTree(bool ascending = true) {

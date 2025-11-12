@@ -64,10 +64,44 @@ void test_access_wrapper() {
     BinaryTree<int> bt = BinaryTree<int>();
     bt + std::make_pair(10, Direction::HEAD);
 
-    AccessWrapper<BinaryTree<int>> wrapper =
-        AccessWrapper<BinaryTree<int>>(&bt);
-
+    AccessWrapper<BinaryTree<int>> wrapper(&bt);
     assert((*wrapper)[0] == 10, "head isnt 10");
+}
+
+void test_bt_input() {
+    BinaryTree<int> bt = BinaryTree<int>();
+    std::cout << "Input BinaryTree structure (inline): ";
+    std::cin >> bt;
+    std::cout << bt;
+
+    assert(!bt.empty(), "tree is empty");
+}
+
+void test_bt_pseudo() {
+    BinaryTree<int> bt;
+    bt + std::make_pair(10, Direction::HEAD);
+    bt + std::make_pair(9, Direction::LEFT);
+    bt + std::make_pair(8, Direction::RIGHT);
+    bt ^ "left";
+
+    bt + std::make_pair(11, Direction::LEFT);
+
+    assert(bt(2, 0) == 11, "first element on depth 2 is not 11");
+
+    bt(2, 0) = 12;
+
+    assert(bt(2, 0) == 12, "first element on depth 2 is not 12");
+
+    BinaryTree<int> bt2;
+    bt2 + std::make_pair(15, Direction::HEAD);
+    bt2 + std::make_pair(16, Direction::LEFT);
+
+    bt(2, 0) = bt2;
+
+    std::cout << bt;
+
+    assert(bt(2, 0) == 15, "first element on depth 2 is not 15");
+    assert(bt(3, 0) == 16, "first element on depth 3 is not 16");
 }
 
 int main(void) {
@@ -79,6 +113,10 @@ int main(void) {
     log(LogLevel::INFO, "Tree sorting tests passed");
     test_access_wrapper();
     log(LogLevel::INFO, "Access wrapper tests passed");
+    test_bt_input();
+    log(LogLevel::INFO, "Tree input tests passed");
+    test_bt_pseudo();
+    log(LogLevel::INFO, "Tree pseudo-variable tests passed");
 }
 
 #endif
