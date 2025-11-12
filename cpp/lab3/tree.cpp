@@ -1,4 +1,5 @@
 #include "tree.h"
+#include "log.h"
 
 template <typename T> Node<T>::Node() = default;
 template <typename T>
@@ -79,6 +80,40 @@ Node<T> *BinaryTree<T>::getNthNode(Node<T> *node, unsigned &index) const {
     index--;
 
     return getNthNode(node->right, index);
+}
+
+template <typename T>
+Node<T> *BinaryTree<T>::getNodeAt(unsigned depth, unsigned index) const {
+    if (!head) return nullptr;
+
+    Vector<Node<T> *> current_level;
+    current_level.push(head);
+
+    for (unsigned d = 0; d < depth; ++d) {
+        Vector<Node<T> *> next_level;
+
+        for (unsigned i = 0; i < current_level.len(); ++i) {
+            Node<T> **node_ptr = current_level.get(i);
+            if (!node_ptr || !(*node_ptr)) continue;
+
+            Node<T> *node = *node_ptr;
+
+            if (node->left) {
+                next_level
+                    .push( // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        node->left);
+            } // blalalalalalaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            if (node->right) { next_level.push(node->right); }
+        }
+
+        if (next_level.empty()) return nullptr;
+        current_level = next_level;
+    }
+
+    if (index >= current_level.len()) return nullptr;
+
+    Node<T> **result = current_level.get(index);
+    return result && *result ? *result : nullptr;
 }
 
 template <typename T> Node<T> *BinaryTree<T>::safeGetLastPath() const {
@@ -208,7 +243,11 @@ BinaryTree<T> &BinaryTree<T>::operator=(BinaryTree<T> &&other) noexcept {
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, BinaryTree<T> const &tree) {
-    tree.displayIndented(out, tree.head, 0);
+    if (&out == &std::cout || &out == &std::cerr) {
+        tree.displayIndented(out, tree.head, 0);
+    } else {
+        tree.saveNode(out, tree.head);
+    }
     return out;
 }
 
@@ -217,26 +256,6 @@ std::istream &operator>>(std::istream &in, BinaryTree<T> &tree) {
     tree.head = tree.loadNode(in);
     tree.cur_ptr = tree.head;
     return in;
-}
-
-template <typename T>
-void BinaryTree<T>::save(const std::string &filename) const {
-    std::ofstream out(filename);
-    if (!out.is_open()) {
-        log(LogLevel::ERROR, "Cannot open file for writing: " + filename);
-        return;
-    }
-    saveNode(out, head);
-}
-
-template <typename T> void BinaryTree<T>::load(const std::string &filename) {
-    std::ifstream in(filename);
-    if (!in.is_open()) {
-        log(LogLevel::ERROR, "Cannot open file for reading: " + filename);
-        return;
-    }
-    head = loadNode(in);
-    cur_ptr = head;
 }
 
 template <typename T>
@@ -371,6 +390,47 @@ BinaryTree<T> &BinaryTree<T>::operator^(const std::string &dir) {
     }
 
     return *this;
+}
+
+template <typename T>
+BinaryTree<T>::NodeRef::NodeRef(BinaryTree<T> *t, Node<T> *n)
+    : tree(t), node(n) {}
+
+template <typename T>
+typename BinaryTree<T>::NodeRef &
+BinaryTree<T>::NodeRef::operator=(const T &new_val) {
+    if (!node) {
+        log(LogLevel::WARN, "Attempted to assign to non-existent node");
+        return *this;
+    }
+    node->val = new_val;
+    return *this;
+}
+
+template <typename T>
+typename BinaryTree<T>::NodeRef &
+BinaryTree<T>::NodeRef::operator=(const BinaryTree<T> &other) {
+    if (!node) {
+        log(LogLevel::WARN, "Attempted to replace non-existent node");
+        return *this;
+    }
+    tree->replaceSubtree(node, other.head);
+    return *this;
+}
+
+template <typename T> BinaryTree<T>::NodeRef::operator T &() {
+    return node->val;
+}
+
+template <typename T> BinaryTree<T>::NodeRef::operator const T &() const {
+    return node->val;
+}
+
+template <typename T>
+typename BinaryTree<T>::NodeRef BinaryTree<T>::operator()(unsigned depth,
+                                                          unsigned index) {
+    Node<T> *node = getNodeAt(depth, index);
+    return NodeRef(this, node);
 }
 
 template <typename T> void BinaryTree<T>::sortTree(bool ascending) {

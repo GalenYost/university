@@ -44,6 +44,7 @@ template <typename T> class BinaryTree {
     void displayIndented(std::ostream &out, Node<T> *node, int depth) const;
 
     Node<T> *getNthNode(Node<T> *node, unsigned &index) const;
+    Node<T> *getNodeAt(unsigned depth, unsigned index) const;
     Node<T> *safeGetLastPath() const;
 
     void saveNode(std::ostream &out, Node<T> *node) const;
@@ -71,10 +72,20 @@ template <typename T> class BinaryTree {
     BinaryTree<T> &operator^(Direction dir);
     BinaryTree<T> &operator^(const std::string &dir);
 
-    void save(const std::string &filename) const;
-    void load(const std::string &filename);
+    class NodeRef {
+        BinaryTree<T> *tree;
+        Node<T> *node;
+
+      public:
+        NodeRef(BinaryTree<T> *t, Node<T> *n);
+        NodeRef &operator=(const T &new_val);
+        NodeRef &operator=(const BinaryTree<T> &other);
+        operator T &();
+        operator const T &() const;
+    };
+
+    NodeRef operator()(unsigned depth, unsigned index);
 
     void sortTree(bool ascending = true);
-
     bool empty() const;
 };
