@@ -12,7 +12,6 @@ inline void assert(bool condition, const std::string &msg) {
         return;
     else
         log(LogLevel::ERROR, "Assertion failed: " + msg);
-    std::exit(0);
 }
 
 void test_vec() {
@@ -36,8 +35,8 @@ void test_tree() {
     bt + std::make_pair(2, Direction::LEFT);
     bt + std::make_pair(3, Direction::RIGHT);
 
-    assert(bt[0] == 2, "left isnt equal to 1");
-    assert(bt[1] == 1, "head isnt equal to 2");
+    assert(bt[0] == 2, "left isnt equal to 2");
+    assert(bt[1] == 1, "head isnt equal to 1");
     assert(bt[2] == 3, "right isnt equal to 3");
 }
 
@@ -97,8 +96,6 @@ void test_bt_pseudo() {
     bt2 + std::make_pair(16, Direction::LEFT);
 
     bt(2, 0) = bt2;
-
-    std::cout << bt;
 
     assert(bt(2, 0) == 15, "first element on depth 2 is not 15");
     assert(bt(3, 0) == 16, "first element on depth 3 is not 16");

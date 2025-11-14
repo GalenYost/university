@@ -40,12 +40,15 @@ template <typename T> class BinaryTree {
     Vector<Node<T> *> path = Vector<Node<T> *>();
 
     void clear(Node<T> *node);
-    void replaceSubtree(Node<T> *&ptr, Node<T> *newNode);
     void displayIndented(std::ostream &out, Node<T> *node, int depth) const;
+    void replaceSubtree(Node<T> *&target, Node<T> *source);
+    void deleteSubtree(Node<T> *node);
 
     Node<T> *getNthNode(Node<T> *node, unsigned &index) const;
     Node<T> *getNodeAt(unsigned depth, unsigned index) const;
     Node<T> *safeGetLastPath() const;
+    Node<T> *cloneSubtree(const Node<T> *src) const;
+    Node<T> *findParent(Node<T> *root, Node<T> *child) const;
 
     void saveNode(std::ostream &out, Node<T> *node) const;
     Node<T> *loadNode(std::istream &in) const;
@@ -88,4 +91,6 @@ template <typename T> class BinaryTree {
 
     void sortTree(bool ascending = true);
     bool empty() const;
+
+    void debug_print_inorder() const;
 };

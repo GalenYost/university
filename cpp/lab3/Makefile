@@ -42,7 +42,7 @@ debug:
 	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DDEBUG_MODE"
 
 test:
-	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DTEST_MODE"
+	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DTEST_MODE -DDEBUG_MODE"
 
 execute: all
 	@./$(EXE)

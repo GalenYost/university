@@ -1,5 +1,6 @@
 #include "tree.h"
 #include "log.h"
+#include <functional>
 
 template <typename T> Node<T>::Node() = default;
 template <typename T>
@@ -98,11 +99,7 @@ Node<T> *BinaryTree<T>::getNodeAt(unsigned depth, unsigned index) const {
 
             Node<T> *node = *node_ptr;
 
-            if (node->left) {
-                next_level
-                    .push( // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                        node->left);
-            } // blalalalalalaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            if (node->left) { next_level.push(node->left); }
             if (node->right) { next_level.push(node->right); }
         }
 
@@ -122,10 +119,35 @@ template <typename T> Node<T> *BinaryTree<T>::safeGetLastPath() const {
     return last ? *last : nullptr;
 }
 
+template <typename T> void BinaryTree<T>::deleteSubtree(Node<T> *node) {
+    if (!node) return;
+    deleteSubtree(node->left);
+    deleteSubtree(node->right);
+    delete node;
+}
+
 template <typename T>
-void BinaryTree<T>::replaceSubtree(Node<T> *&ptr, Node<T> *newNode) {
-    if (ptr) { clear(ptr); }
-    ptr = newNode;
+Node<T> *BinaryTree<T>::findParent(Node<T> *root, Node<T> *child) const {
+    if (!root || !child) return nullptr;
+    if (root->left == child || root->right == child) return root;
+    Node<T> *left = findParent(root->left, child);
+    if (left) return left;
+    return findParent(root->right, child);
+}
+
+template <typename T>
+Node<T> *BinaryTree<T>::cloneSubtree(const Node<T> *src) const {
+    if (!src) return nullptr;
+    Node<T> *newNode = new Node<T>(src->val);
+    newNode->left = cloneSubtree(src->left);
+    newNode->right = cloneSubtree(src->right);
+    return newNode;
+}
+
+template <typename T>
+void BinaryTree<T>::replaceSubtree(Node<T> *&target, Node<T> *source) {
+    deleteSubtree(target);
+    target = cloneSubtree(source);
 }
 
 template <typename T>
@@ -260,9 +282,14 @@ std::istream &operator>>(std::istream &in, BinaryTree<T> &tree) {
 
 template <typename T>
 BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, Direction> p) {
-    if (!cur_ptr) { *this ^ Direction::HEAD; }
-
     Node<T> *newNode = new Node<T>(p.first);
+
+    if (!cur_ptr) *this ^ Direction::HEAD;
+    if (!cur_ptr) {
+        log(LogLevel::WARN, "No head, forcing insert to head value: " +
+                                std::to_string(p.first));
+        p.second = Direction::HEAD;
+    }
 
     switch (p.second) {
     case Direction::LEFT:
@@ -272,9 +299,12 @@ BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, Direction> p) {
         replaceSubtree(cur_ptr->right, newNode);
         break;
     case Direction::HEAD: {
-        Node<T> *new_head = new Node<T>(p.first);
-        new_head->left = head;
-        head = new_head;
+        if (!head) {
+            Node<T> *new_head = new Node<T>(p.first);
+            head = new_head;
+        } else {
+            head->val = p.first;
+        }
         cur_ptr = head;
         break;
     }
@@ -309,8 +339,8 @@ BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, std::string> p) {
 
 template <typename T> BinaryTree<T> &BinaryTree<T>::operator^(Direction dir) {
     if (!cur_ptr) {
-        log(LogLevel::WARN,
-            "Dropping call, no current pointer, set pointer to head");
+        log(LogLevel::WARN, "No current pointer, forcing pointer to head");
+        if (!head) log(LogLevel::WARN, "No head found, infinite loop possible");
         cur_ptr = head;
         return *this;
     }
@@ -461,6 +491,19 @@ template <typename T> void BinaryTree<T>::sortTree(bool ascending) {
 
 template <typename T> bool BinaryTree<T>::empty() const {
     return head == nullptr;
+}
+
+template <typename T> void BinaryTree<T>::debug_print_inorder() const {
+#ifdef DEBUG_MODE
+    unsigned i = 0;
+    std::function<void(Node<T> *)> pr = [&](Node<T> *node) {
+        if (!node) return;
+        pr(node->left);
+        std::cerr << "[" << i++ << "] = " << node->val << "\n";
+        pr(node->right);
+    };
+    pr(head);
+#endif
 }
 
 template class BinaryTree<int>;
