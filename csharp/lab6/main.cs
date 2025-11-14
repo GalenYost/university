@@ -442,11 +442,10 @@ public class Listener<TKey>
     public override string ToString()
     {
         if (entries.Count == 0)
-            return "Журнал подій порожній.";
+            return "Events list is empty";
 
         return string.Join("\n", entries.Select(e => e.ToString()));
     }
-
 
     public void Clear() => entries.Clear();
 }
@@ -514,12 +513,12 @@ public class Program
         int year = 1946;
         Console.WriteLine($"\nBirthYear {year}:");
         foreach (var kvp in col1.BirthYear(year))
-            Console.WriteLine($"  {kvp.Value.Pseudo} ({kvp.Value.Birthday.Year})");
+            Console.WriteLine($"  {kvp.Value.Pseudo}");
 
         Console.WriteLine("\nGrouped by BirthYear");
         foreach (var group in col1.GroupByBirthYear)
         {
-            Console.WriteLine($"  Рік {group.Key}:");
+            Console.WriteLine($"  Year {group.Key}:");
             foreach (var kvp in group)
                 Console.WriteLine($"    {kvp.Value.Pseudo}");
         }
