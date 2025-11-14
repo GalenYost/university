@@ -49,5 +49,9 @@ execute: all
 
 run: execute clean
 
+lib.a: $(OBJS)
+	@ar rcs $@ $(OBJS)
+	@$(MAKE) clean
+
 clean:
 	@rm -rf $(BUILD_DIR) $(DEBUG_BUILD_DIR) $(EXE)

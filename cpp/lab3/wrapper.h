@@ -1,15 +1,17 @@
 #pragma once
 
+#include "tree.h"
+
 template <typename T> class AccessWrapper {
     T *ptr;
 
   public:
-    explicit AccessWrapper(T *p) : ptr(p) {}
-    ~AccessWrapper() = default;
+    explicit AccessWrapper(T *p);
+    ~AccessWrapper();
 
-    T *operator->() { return ptr; }
-    const T *operator->() const { return ptr; }
+    T *operator->();
+    const T *operator->() const;
 
-    T &operator*() { return *ptr; }
-    const T &operator*() const { return *ptr; }
+    T &operator*();
+    const T &operator*() const;
 };

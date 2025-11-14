@@ -110,42 +110,32 @@ void get_fn(void *env) {
 
 int main(void) {
     BinaryTree<int> bt = BinaryTree<int>();
-    std::cout << "Inline input: " << std::flush;
-    std::cin >> bt;
-    std::cout << std::endl;
 
-    std::cout << bt << std::endl;
-    std::cout << bt(2, 0) << std::endl;
+    Closure exit_cl = {.cb = exit_fn};
+    Closure insert_cl = {&bt, insert_fn};
+    Closure move_cl = {&bt, move_fn};
+    Closure sort_cl = {&bt, sort_fn};
+    Closure reset_cl = {&bt, reset_fn};
+    Closure read_cl = {&bt, read_fn};
+    Closure write_cl = {&bt, write_fn};
+    Closure display_cl = {&bt, display_fn};
+    Closure get_cl = {&bt, get_fn};
+
+    InputBuffer ib = InputBuffer();
+    ib.bind('e', "exit", exit_cl)
+        .bind('i', "insert", insert_cl)
+        .bind('m', "move", move_cl)
+        .bind('s', "sort", sort_cl)
+        .bind('c', "clear", reset_cl)
+        .bind('r', "read", read_cl)
+        .bind('w', "write", write_cl)
+        .bind('g', "get", get_cl)
+        .bind('d', "display tree", display_cl);
+
+    do {
+        ib.prompt("Options:");
+        ib.awaitInput("Choice: ");
+    } while (true);
 }
-
-// int main(void) {
-//     BinaryTree<int> bt = BinaryTree<int>();
-//
-//     Closure exit_cl = {.cb = exit_fn};
-//     Closure insert_cl = {&bt, insert_fn};
-//     Closure move_cl = {&bt, move_fn};
-//     Closure sort_cl = {&bt, sort_fn};
-//     Closure reset_cl = {&bt, reset_fn};
-//     Closure read_cl = {&bt, read_fn};
-//     Closure write_cl = {&bt, write_fn};
-//     Closure display_cl = {&bt, display_fn};
-//     Closure get_cl = {&bt, get_fn};
-//
-//     InputBuffer ib = InputBuffer();
-//     ib.bind('e', "exit", exit_cl)
-//         .bind('i', "insert", insert_cl)
-//         .bind('m', "move", move_cl)
-//         .bind('s', "sort", sort_cl)
-//         .bind('c', "clear", reset_cl)
-//         .bind('r', "read", read_cl)
-//         .bind('w', "write", write_cl)
-//         .bind('g', "get", get_cl)
-//         .bind('d', "display tree", display_cl);
-//
-//     do {
-//         ib.prompt("Options:");
-//         ib.awaitInput("Choice: ");
-//     } while (true);
-// }
 
 #endif
