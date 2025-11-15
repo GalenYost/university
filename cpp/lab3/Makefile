@@ -5,7 +5,7 @@ BUILD_DIR := build
 DEBUG_BUILD_DIR := debug
 
 CXX ?= g++
-CXXFLAGS ?= -O2 -I. -std=c++23
+CXXFLAGS ?= -O2 -I. -std=c++23 -fPIC
 DEBUG_FLAGS ?= -g -O0
 
 EXE ?= app
@@ -51,6 +51,10 @@ run: execute clean
 
 lib.a: $(OBJS)
 	@ar rcs $@ $(OBJS)
+	@$(MAKE) clean
+
+lib.so: $(OBJS)
+	@$(CXX) -shared -fPIC $(OBJS) -o $@
 	@$(MAKE) clean
 
 clean:

@@ -50,7 +50,7 @@ void InputBuffer::awaitInput(std::string str) {
     std::cout << str << std::flush;
     InputValue input = readInputCastValue(InputType::CHAR);
     if (!input.ch) {
-        log(LogLevel::ERROR, "fail reading input");
+        log_to_out(LogLevel::ERROR, "fail reading input");
         return;
     }
     for (unsigned i = 0; i < pairs.len(); i++) {
@@ -60,5 +60,21 @@ void InputBuffer::awaitInput(std::string str) {
         cur->cl.cb(cur->cl.env);
         return;
     }
-    log(LogLevel::WARN, "No such option: " + std::to_string(input.ch));
+    log_to_out(LogLevel::WARN, "No such option: " + std::to_string(input.ch));
 }
+
+#ifdef __cplusplus
+extern "C" {
+
+InputBuffer *createInputBuffer() { return new InputBuffer; }
+void destroyInputBuffer(InputBuffer *ib) { delete ib; }
+
+void inputBufferBind(InputBuffer *ib, char key, std::string value, Closure cl) {
+    ib->bind(key, value, cl);
+}
+void prompt_ib(InputBuffer *ib, const std::string &str) { ib->prompt(str); }
+void awaitInput(InputBuffer *ib, const std::string &str) {
+    ib->awaitInput(str);
+}
+}
+#endif

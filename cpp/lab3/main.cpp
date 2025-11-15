@@ -1,5 +1,3 @@
-#include <fstream>
-#include <print>
 #ifndef TEST_MODE
 
 #include "input.h"
@@ -7,9 +5,10 @@
 #include "tree.h"
 
 #include <bits/stdc++.h>
+#include <fstream>
 
-void exit_fn(void *) { std::exit(0); }
-void insert_fn(void *env) {
+extern "C" void exit_fn(void *) { std::exit(0); }
+extern "C" void insert_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Direction (LEFT/RIGHT/HEAD): " << std::flush;
@@ -21,21 +20,48 @@ void insert_fn(void *env) {
     std::cout << "Value (int): " << std::flush;
     InputValue val_input = readInputCastValue(InputType::INT);
 
-    *bt + std::make_pair(val_input.i, dir_input.str);
+    Direction dir;
+    if (dir_input.str == "head") {
+        dir = Direction::HEAD;
+    } else if (dir_input.str == "left") {
+        dir = Direction::LEFT;
+    } else if (dir_input.str == "right") {
+        dir = Direction::RIGHT;
+    } else {
+        log_to_out(LogLevel::ERROR, "Wrong option");
+        return;
+    }
+
+    AddElementArgs<int> args = {.val = val_input.i, .dir = dir};
+    *bt + args;
 }
-void move_fn(void *env) {
+extern "C" void move_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
-    std::cout << "Direction (LEFT/RIGHT/HEAD/UP): " << std::flush;
+    std::cout << "Direction (LEFT/RIGHT/HEAD): " << std::flush;
     InputValue dir_input = readInputCastValue(InputType::STR);
 
     std::transform(dir_input.str.begin(), dir_input.str.end(),
                    dir_input.str.begin(), ::tolower);
 
-    *bt ^ dir_input.str;
+    Direction dir;
+    if (dir_input.str == "head") {
+        dir = Direction::HEAD;
+    } else if (dir_input.str == "left") {
+        dir = Direction::LEFT;
+    } else if (dir_input.str == "right") {
+        dir = Direction::RIGHT;
+    } else if (dir_input.str == "up") {
+        dir = Direction::UP;
+    } else {
+        log_to_out(LogLevel::ERROR, "Wrong option");
+        return;
+    }
+
+    *bt ^ dir;
 }
 
-void sort_fn(void *env) {
+extern "C" void sort_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Order (0 - descending, 1 - ascending): " << std::flush;
@@ -48,12 +74,12 @@ void sort_fn(void *env) {
     }
 }
 
-void reset_fn(void *env) {
+extern "C" void reset_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
     *bt = BinaryTree<int>();
 }
 
-void read_fn(void *env) {
+extern "C" void read_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Input stream (file/console): " << std::flush;
@@ -69,15 +95,16 @@ void read_fn(void *env) {
         std::ifstream in(fname.str);
         in >> *bt;
     } else if (stream.str == "console") {
-        log(LogLevel::WARN, "# - null, pattern: 1 # # (1 - center, # - left, # "
-                            "- right), # MUST BE SPECIFIED IF NULL");
+        log_to_out(LogLevel::WARN,
+                   "# - null, pattern: 1 # # (1 - center, # - left, # "
+                   "- right), # MUST BE SPECIFIED IF NULL");
         std::cout << "Inline input: " << std::flush;
         std::cin >> *bt;
     } else
         std::cout << "Unknown option" << std::endl;
 }
 
-void write_fn(void *env) {
+extern "C" void write_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Filename (with extension): " << std::flush;
@@ -87,16 +114,16 @@ void write_fn(void *env) {
     out << *bt;
 }
 
-void display_fn(void *env) {
+extern "C" void display_fn(void *env) {
     std::cout << std::endl;
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
-    log(LogLevel::INFO, "Current tree:");
+    log_to_out(LogLevel::INFO, "Current tree:");
     std::cout << *bt;
     std::cout << std::endl;
 }
 
-void get_fn(void *env) {
+extern "C" void get_fn(void *env) {
     std::cout << std::endl;
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
@@ -108,7 +135,7 @@ void get_fn(void *env) {
     std::cout << std::endl;
 }
 
-int main(void) {
+int run() {
     BinaryTree<int> bt = BinaryTree<int>();
 
     Closure exit_cl = {.cb = exit_fn};
@@ -136,6 +163,12 @@ int main(void) {
         ib.prompt("Options:");
         ib.awaitInput("Choice: ");
     } while (true);
+
+    return 0;
 }
+
+int main(void) { return run(); }
+
+extern "C" void module_main() { run(); }
 
 #endif

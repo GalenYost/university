@@ -1,13 +1,12 @@
 #include "tree.h"
+#include "input.h"
 #include "log.h"
-#include <functional>
 
 template <typename T> Node<T>::Node() = default;
 template <typename T>
 Node<T>::Node(const T &v) : val(v), left(nullptr), right(nullptr) {}
 
 template struct Node<int>;
-template struct Node<std::string>;
 
 template <typename T> void collectValues(Node<T> *node, Vector<T> *vec) {
     if (!node) return;
@@ -178,7 +177,7 @@ void BinaryTree<T>::saveNode(std::ostream &out, Node<T> *node) const {
 template <typename T> Node<T> *BinaryTree<T>::loadNode(std::istream &in) const {
     std::string token;
     if (!(in >> token)) {
-        log(LogLevel::ERROR, "EOF while reading tree");
+        log_to_out(LogLevel::ERROR, "EOF while reading tree");
         return nullptr;
     }
 
@@ -200,11 +199,11 @@ template <typename T> Node<T> *BinaryTree<T>::loadNode(std::istream &in) const {
         value = (token != "0");
         ok = true;
     } else {
-        log(LogLevel::ERROR, "Unsupported type in loadNode");
+        log_to_out(LogLevel::ERROR, "Unsupported type in loadNode");
     }
 
     if (!ok) {
-        log(LogLevel::ERROR, "Parse error for token: " + token);
+        log_to_out(LogLevel::ERROR, "Parse error for token: " + token);
         return nullptr;
     }
 
@@ -230,7 +229,7 @@ template <typename T> BinaryTree<T>::~BinaryTree() {
 template <typename T> const T &BinaryTree<T>::operator[](unsigned n) const {
     Node<T> *result = getNthNode(head, n);
     if (!result) {
-        log(LogLevel::ERROR, "BinaryTree index out of range");
+        log_to_out(LogLevel::ERROR, "BinaryTree index out of range");
         std::exit(0);
     }
     return result->val;
@@ -280,18 +279,21 @@ std::istream &operator>>(std::istream &in, BinaryTree<T> &tree) {
     return in;
 }
 
+template struct AddElementArgs<int>;
+template struct AddElementArgs<char>;
+
 template <typename T>
-BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, Direction> p) {
-    Node<T> *newNode = new Node<T>(p.first);
+BinaryTree<T> &BinaryTree<T>::operator+(AddElementArgs<T> args) {
+    Node<T> *newNode = new Node<T>(args.val);
 
     if (!cur_ptr) *this ^ Direction::HEAD;
     if (!cur_ptr) {
-        log(LogLevel::WARN, "No head, forcing insert to head value: " +
-                                std::to_string(p.first));
-        p.second = Direction::HEAD;
+        log_to_out(LogLevel::WARN, "No head, forcing insert to head value: " +
+                                       std::to_string(args.val));
+        args.dir = Direction::HEAD;
     }
 
-    switch (p.second) {
+    switch (args.dir) {
     case Direction::LEFT:
         replaceSubtree(cur_ptr->left, newNode);
         break;
@@ -300,47 +302,29 @@ BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, Direction> p) {
         break;
     case Direction::HEAD: {
         if (!head) {
-            Node<T> *new_head = new Node<T>(p.first);
+            Node<T> *new_head = new Node<T>(args.val);
             head = new_head;
         } else {
-            head->val = p.first;
+            head->val = args.val;
         }
         cur_ptr = head;
         break;
     }
     default:
-        log(LogLevel::WARN, "Only 'left', 'right' and 'head' are possible");
+        log_to_out(LogLevel::WARN,
+                   "Only 'left', 'right' and 'head' are possible");
         delete newNode;
         break;
-    }
-    return *this;
-}
-template <typename T>
-BinaryTree<T> &BinaryTree<T>::operator+(std::pair<T, std::string> p) {
-    if (!cur_ptr) { *this ^ Direction::HEAD; }
-
-    Node<T> *newNode = new Node<T>(p.first);
-
-    if (p.second == "left") {
-        replaceSubtree(cur_ptr->left, newNode);
-    } else if (p.second == "right") {
-        replaceSubtree(cur_ptr->right, newNode);
-    } else if (p.second == "head") {
-        Node<T> *new_head = new Node<T>(p.first);
-        new_head->left = head;
-        head = new_head;
-        cur_ptr = head;
-    } else {
-        log(LogLevel::WARN, "Only 'left', 'right' and 'head' are possible");
-        delete newNode;
     }
     return *this;
 }
 
 template <typename T> BinaryTree<T> &BinaryTree<T>::operator^(Direction dir) {
     if (!cur_ptr) {
-        log(LogLevel::WARN, "No current pointer, forcing pointer to head");
-        if (!head) log(LogLevel::WARN, "No head found, infinite loop possible");
+        log_to_out(LogLevel::WARN,
+                   "No current pointer, forcing pointer to head");
+        if (!head)
+            log_to_out(LogLevel::WARN, "No head found, infinite loop possible");
         cur_ptr = head;
         return *this;
     }
@@ -352,9 +336,9 @@ template <typename T> BinaryTree<T> &BinaryTree<T>::operator^(Direction dir) {
             if (cur_ptr)
                 path.pop();
             else
-                log(LogLevel::WARN, "Path is empty");
+                log_to_out(LogLevel::WARN, "Path is empty");
         } else {
-            log(LogLevel::WARN, "Path is empty");
+            log_to_out(LogLevel::WARN, "Path is empty");
         }
         break;
     case Direction::LEFT:
@@ -362,7 +346,7 @@ template <typename T> BinaryTree<T> &BinaryTree<T>::operator^(Direction dir) {
             path.push(cur_ptr);
             cur_ptr = cur_ptr->left;
         } else {
-            log(LogLevel::WARN, "Left element doesn't exist");
+            log_to_out(LogLevel::WARN, "Left element doesn't exist");
         }
         break;
     case Direction::RIGHT:
@@ -370,53 +354,13 @@ template <typename T> BinaryTree<T> &BinaryTree<T>::operator^(Direction dir) {
             path.push(cur_ptr);
             cur_ptr = cur_ptr->right;
         } else {
-            log(LogLevel::WARN, "Right element doesn't exist");
+            log_to_out(LogLevel::WARN, "Right element doesn't exist");
         }
         break;
     case Direction::HEAD:
         cur_ptr = head;
         path = Vector<Node<T> *>();
         break;
-    }
-
-    return *this;
-}
-template <typename T>
-BinaryTree<T> &BinaryTree<T>::operator^(const std::string &dir) {
-    if (!cur_ptr) {
-        log(LogLevel::WARN,
-            "Dropping call, no current pointer, set pointer to head");
-        cur_ptr = head;
-        return *this;
-    }
-
-    if (dir == "up") {
-        if (path.len() > 0) {
-            cur_ptr = safeGetLastPath();
-            if (cur_ptr)
-                path.pop();
-            else
-                log(LogLevel::WARN, "Path is empty");
-        } else {
-            log(LogLevel::WARN, "Path is empty");
-        }
-    } else if (dir == "left") {
-        if (cur_ptr->left) {
-            path.push(cur_ptr);
-            cur_ptr = cur_ptr->left;
-        } else {
-            log(LogLevel::WARN, "Left element doesn't exist");
-        }
-    } else if (dir == "right") {
-        if (cur_ptr->right) {
-            path.push(cur_ptr);
-            cur_ptr = cur_ptr->right;
-        } else {
-            log(LogLevel::WARN, "Right element doesn't exist");
-        }
-    } else {
-        cur_ptr = head;
-        path = Vector<Node<T> *>();
     }
 
     return *this;
@@ -430,7 +374,7 @@ template <typename T>
 typename BinaryTree<T>::NodeRef &
 BinaryTree<T>::NodeRef::operator=(const T &new_val) {
     if (!node) {
-        log(LogLevel::WARN, "Attempted to assign to non-existent node");
+        log_to_out(LogLevel::WARN, "Attempted to assign to non-existent node");
         return *this;
     }
     node->val = new_val;
@@ -441,7 +385,7 @@ template <typename T>
 typename BinaryTree<T>::NodeRef &
 BinaryTree<T>::NodeRef::operator=(const BinaryTree<T> &other) {
     if (!node) {
-        log(LogLevel::WARN, "Attempted to replace non-existent node");
+        log_to_out(LogLevel::WARN, "Attempted to replace non-existent node");
         return *this;
     }
     tree->replaceSubtree(node, other.head);
@@ -493,24 +437,60 @@ template <typename T> bool BinaryTree<T>::empty() const {
     return head == nullptr;
 }
 
-template <typename T> void BinaryTree<T>::debug_print_inorder() const {
-#ifdef DEBUG_MODE
-    unsigned i = 0;
-    std::function<void(Node<T> *)> pr = [&](Node<T> *node) {
-        if (!node) return;
-        pr(node->left);
-        std::cerr << "[" << i++ << "] = " << node->val << "\n";
-        pr(node->right);
-    };
-    pr(head);
-#endif
-}
-
 template class BinaryTree<int>;
-template class BinaryTree<char>;
 
 template std::ostream &operator<<(std::ostream &, BinaryTree<int> const &);
 template std::ostream &operator<<(std::ostream &, BinaryTree<char> const &);
 
 template std::istream &operator>>(std::istream &, BinaryTree<int> &);
 template std::istream &operator>>(std::istream &, BinaryTree<char> &);
+
+#ifdef __cplusplus
+extern "C" {
+
+BinaryTree<int> *create_tree() { return new BinaryTree<int>(); }
+void destroy_tree(BinaryTree<int> *bt) { delete bt; }
+void clear_tree(BinaryTree<int> *bt) { *bt = BinaryTree<int>(); }
+
+void add_element(BinaryTree<int> *bt, int el, Direction dir) {
+    AddElementArgs<int> args = {.val = el, .dir = dir};
+    *bt + args;
+}
+
+void move_ptr(BinaryTree<int> *bt, Direction dir) { *bt ^ dir; }
+
+void input_tree(BinaryTree<int> *bt) {
+    std::cout << "Input stream (file/console): " << std::flush;
+    InputValue stream = readInputCastValue(InputType::STR);
+
+    std::transform(stream.str.begin(), stream.str.end(), stream.str.begin(),
+                   ::tolower);
+
+    if (stream.str == "file") {
+        std::cout << "Filename (with extension): " << std::flush;
+        InputValue fname = readInputCastValue(InputType::STR);
+
+        std::ifstream in(fname.str);
+        in >> *bt;
+    } else if (stream.str == "console") {
+        log_to_out(LogLevel::WARN,
+                   "# - null, pattern: 1 # # (1 - center, # - left, # "
+                   "- right), # MUST BE SPECIFIED IF NULL");
+        std::cout << "Inline input: " << std::flush;
+        std::cin >> *bt;
+    } else
+        std::cout << "Unknown option" << std::endl;
+}
+
+void output_tree(BinaryTree<int> *bt) {
+    std::cout << "Filename (with extension): " << std::flush;
+    InputValue fname = readInputCastValue(InputType::STR);
+
+    std::ofstream out(fname.str);
+    out << *bt;
+}
+
+void display_tree(BinaryTree<int> *bt) { std::cout << *bt; }
+}
+
+#endif
