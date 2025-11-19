@@ -4,8 +4,8 @@ FILE_EXT := cpp
 BUILD_DIR := build
 DEBUG_BUILD_DIR := debug
 
-CXX ?= g++
-CXXFLAGS ?= -O2 -I. -std=c++23 -fPIC
+CXX ?= clang++
+CXXFLAGS ?= -O2 -I. -fPIC
 DEBUG_FLAGS ?= -g -O0
 
 EXE ?= app

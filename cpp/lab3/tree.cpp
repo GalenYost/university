@@ -440,10 +440,7 @@ template <typename T> bool BinaryTree<T>::empty() const {
 template class BinaryTree<int>;
 
 template std::ostream &operator<<(std::ostream &, BinaryTree<int> const &);
-template std::ostream &operator<<(std::ostream &, BinaryTree<char> const &);
-
 template std::istream &operator>>(std::istream &, BinaryTree<int> &);
-template std::istream &operator>>(std::istream &, BinaryTree<char> &);
 
 #ifdef __cplusplus
 extern "C" {
@@ -463,8 +460,7 @@ void input_tree(BinaryTree<int> *bt) {
     std::cout << "Input stream (file/console): " << std::flush;
     InputValue stream = readInputCastValue(InputType::STR);
 
-    std::transform(stream.str.begin(), stream.str.end(), stream.str.begin(),
-                   ::tolower);
+    to_lower_cpp(stream.str);
 
     if (stream.str == "file") {
         std::cout << "Filename (with extension): " << std::flush;

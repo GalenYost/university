@@ -22,15 +22,6 @@ template <typename T> struct AddElementArgs {
     Direction dir;
 };
 
-inline int cmpInt(const void *a, const void *b);
-
-template <typename T> void collectValues(Node<T> *node, Vector<T> *vec);
-
-template <typename T> Node<T> *buildBST(Vector<T> *vec, int l, int r);
-template <typename T> Node<T> *copySubtree(Node<T> *node);
-
-template <typename T> void quicksort(Vector<T> *vec, int l, int r);
-
 template <typename T> class BinaryTree;
 
 template <typename T>

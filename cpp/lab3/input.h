@@ -32,6 +32,7 @@ typedef struct {
 
 std::string readInput();
 InputValue readInputCastValue(InputType type);
+void to_lower_cpp(std::string &s);
 
 class InputBuffer {
   private:
