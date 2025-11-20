@@ -87,33 +87,3 @@ template class Vector<int>;
 template class Vector<Pair>;
 template class Vector<std::string>;
 template class Vector<Node<int> *>;
-
-#ifdef __cplusplus
-extern "C" {
-
-Vector<int> *create_vector_int() { return new Vector<int>(); }
-Vector<Pair> *create_vector_pair() { return new Vector<Pair>(); }
-Vector<std::string> *create_vector_str() { return new Vector<std::string>(); }
-Vector<Node<int> *> *create_vector_node() { return new Vector<Node<int> *>(); }
-
-void destroy_vec_int(Vector<int> *vec) { delete vec; }
-void destroy_vec_pair(Vector<Pair> *vec) { delete vec; }
-void destroy_vec_str(Vector<std::string> *vec) { delete vec; }
-void destroy_vec_node_int(Vector<Node<int> *> *vec) { delete vec; }
-
-void push_int(Vector<int> *vec, int val) { vec->push(val); }
-void push_pair(Vector<Pair> *vec, Pair val) { vec->push(val); }
-void push_str(Vector<std::string> *vec, std::string val) { vec->push(val); }
-void push_node_int(Vector<Node<int> *> *vec, Node<int> *val) { vec->push(val); }
-
-int pop_int(Vector<int> *vec) { return vec->pop(); }
-void pop_pair(Vector<Pair> *vec) { vec->pop(); }
-void pop_str(Vector<std::string> *vec) { vec->pop(); }
-Node<int> *pop_node_int(Vector<Node<int> *> *vec) { return vec->pop(); }
-
-unsigned len_int(Vector<int> *vec) { return vec->len(); }
-unsigned len_pair(Vector<Pair> *vec) { return vec->len(); }
-unsigned len_str(Vector<std::string> *vec) { return vec->len(); }
-unsigned len_node_int(Vector<Node<int> *> *vec) { return vec->len(); }
-}
-#endif

@@ -11,7 +11,7 @@ inline void assert(bool condition, const std::string &msg) {
     if (condition)
         return;
     else
-        log(LogLevel::ERROR, "Assertion failed: " + msg);
+        log_to_out(LogLevel::ERROR, "Assertion failed: " + msg);
 }
 
 void test_vec() {
@@ -31,9 +31,9 @@ void test_vec() {
 
 void test_tree() {
     BinaryTree<int> bt;
-    bt + std::make_pair(1, Direction::HEAD);
-    bt + std::make_pair(2, Direction::LEFT);
-    bt + std::make_pair(3, Direction::RIGHT);
+    bt + AddElementArgs<int>{.val = 1, .dir = Direction::HEAD};
+    bt + AddElementArgs<int>{.val = 2, .dir = Direction::LEFT};
+    bt + AddElementArgs<int>{.val = 3, .dir = Direction::RIGHT};
 
     assert(bt[0] == 2, "left isnt equal to 2");
     assert(bt[1] == 1, "head isnt equal to 1");
@@ -42,12 +42,12 @@ void test_tree() {
 
 void test_sort_tree() {
     BinaryTree<int> bt = BinaryTree<int>();
-    bt + std::make_pair(10, Direction::HEAD);
-    bt + std::make_pair(100, Direction::LEFT);
-    bt + std::make_pair(80, Direction::RIGHT);
+    bt + AddElementArgs<int>{.val = 10, .dir = Direction::HEAD};
+    bt + AddElementArgs<int>{.val = 100, .dir = Direction::LEFT};
+    bt + AddElementArgs<int>{.val = 80, .dir = Direction::RIGHT};
     bt ^ Direction::LEFT;
-    bt + std::make_pair(70, Direction::LEFT);
-    bt + std::make_pair(110, Direction::RIGHT);
+    bt + AddElementArgs<int>{.val = 70, .dir = Direction::LEFT};
+    bt + AddElementArgs<int>{.val = 110, .dir = Direction::RIGHT};
     bt ^ Direction::HEAD;
 
     assert(bt[0] == 70, "left isnt equal to 70");
@@ -61,7 +61,7 @@ void test_sort_tree() {
 
 void test_access_wrapper() {
     BinaryTree<int> bt = BinaryTree<int>();
-    bt + std::make_pair(10, Direction::HEAD);
+    bt + AddElementArgs<int>{.val = 10, .dir = Direction::HEAD};
 
     AccessWrapper<BinaryTree<int>> wrapper(&bt);
     assert((*wrapper)[0] == 10, "head isnt 10");
@@ -78,12 +78,12 @@ void test_bt_input() {
 
 void test_bt_pseudo() {
     BinaryTree<int> bt;
-    bt + std::make_pair(10, Direction::HEAD);
-    bt + std::make_pair(9, Direction::LEFT);
-    bt + std::make_pair(8, Direction::RIGHT);
-    bt ^ "left";
+    bt + AddElementArgs<int>{.val = 10, .dir = Direction::HEAD};
+    bt + AddElementArgs<int>{.val = 9, .dir = Direction::LEFT};
+    bt + AddElementArgs<int>{.val = 8, .dir = Direction::RIGHT};
+    bt ^ Direction::LEFT;
 
-    bt + std::make_pair(11, Direction::LEFT);
+    bt + AddElementArgs<int>{.val = 11, .dir = Direction::LEFT};
 
     assert(bt(2, 0) == 11, "first element on depth 2 is not 11");
 
@@ -92,8 +92,8 @@ void test_bt_pseudo() {
     assert(bt(2, 0) == 12, "first element on depth 2 is not 12");
 
     BinaryTree<int> bt2;
-    bt2 + std::make_pair(15, Direction::HEAD);
-    bt2 + std::make_pair(16, Direction::LEFT);
+    bt2 + AddElementArgs<int>{.val = 15, .dir = Direction::HEAD};
+    bt2 + AddElementArgs<int>{.val = 16, .dir = Direction::LEFT};
 
     bt(2, 0) = bt2;
 
@@ -103,17 +103,17 @@ void test_bt_pseudo() {
 
 int main(void) {
     test_vec();
-    log(LogLevel::INFO, "Vector tests passed");
+    log_to_out(LogLevel::INFO, "Vector tests passed");
     test_tree();
-    log(LogLevel::INFO, "Tree tests passed");
+    log_to_out(LogLevel::INFO, "Tree tests passed");
     test_sort_tree();
-    log(LogLevel::INFO, "Tree sorting tests passed");
+    log_to_out(LogLevel::INFO, "Tree sorting tests passed");
     test_access_wrapper();
-    log(LogLevel::INFO, "Access wrapper tests passed");
+    log_to_out(LogLevel::INFO, "Access wrapper tests passed");
     test_bt_input();
-    log(LogLevel::INFO, "Tree input tests passed");
+    log_to_out(LogLevel::INFO, "Tree input tests passed");
     test_bt_pseudo();
-    log(LogLevel::INFO, "Tree pseudo-variable tests passed");
+    log_to_out(LogLevel::INFO, "Tree pseudo-variable tests passed");
 }
 
 #endif

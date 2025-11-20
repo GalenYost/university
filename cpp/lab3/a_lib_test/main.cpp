@@ -3,7 +3,7 @@
 
 int main(void) {
     Vector<int> vec;
-    // vec.push(1);
+    vec.push(1);
     vec.push(2);
     vec.push(3);
 

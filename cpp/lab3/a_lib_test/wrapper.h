@@ -6,7 +6,7 @@ template <typename T> class AccessWrapper {
     T *ptr;
 
   public:
-    AccessWrapper(T *p);
+    explicit AccessWrapper(T *p);
     ~AccessWrapper();
 
     T *operator->();

@@ -7,8 +7,8 @@
 #include <bits/stdc++.h>
 #include <fstream>
 
-extern "C" void exit_fn(void *) { std::exit(0); }
-extern "C" void insert_fn(void *env) {
+void exit_fn(void *) { std::exit(0); }
+void insert_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Direction (LEFT/RIGHT/HEAD): " << std::flush;
@@ -35,7 +35,7 @@ extern "C" void insert_fn(void *env) {
     AddElementArgs<int> args = {.val = val_input.i, .dir = dir};
     *bt + args;
 }
-extern "C" void move_fn(void *env) {
+void move_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Direction (LEFT/RIGHT/HEAD): " << std::flush;
@@ -61,7 +61,7 @@ extern "C" void move_fn(void *env) {
     *bt ^ dir;
 }
 
-extern "C" void sort_fn(void *env) {
+void sort_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Order (0 - descending, 1 - ascending): " << std::flush;
@@ -74,12 +74,12 @@ extern "C" void sort_fn(void *env) {
     }
 }
 
-extern "C" void reset_fn(void *env) {
+void reset_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
     *bt = BinaryTree<int>();
 }
 
-extern "C" void read_fn(void *env) {
+void read_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Input stream (file/console): " << std::flush;
@@ -104,7 +104,7 @@ extern "C" void read_fn(void *env) {
         std::cout << "Unknown option" << std::endl;
 }
 
-extern "C" void write_fn(void *env) {
+void write_fn(void *env) {
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
     std::cout << "Filename (with extension): " << std::flush;
@@ -114,7 +114,7 @@ extern "C" void write_fn(void *env) {
     out << *bt;
 }
 
-extern "C" void display_fn(void *env) {
+void display_fn(void *env) {
     std::cout << std::endl;
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
@@ -123,7 +123,7 @@ extern "C" void display_fn(void *env) {
     std::cout << std::endl;
 }
 
-extern "C" void get_fn(void *env) {
+void get_fn(void *env) {
     std::cout << std::endl;
     BinaryTree<int> *bt = static_cast<BinaryTree<int> *>(env);
 
