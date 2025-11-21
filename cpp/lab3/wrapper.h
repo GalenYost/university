@@ -4,6 +4,7 @@
 
 template <typename T> class AccessWrapper {
     T *ptr;
+    unsigned count = 0;
 
   public:
     AccessWrapper(T *p);
@@ -14,4 +15,6 @@ template <typename T> class AccessWrapper {
 
     T &operator*();
     const T &operator*() const;
+
+    unsigned current_count() const;
 };

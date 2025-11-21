@@ -2,52 +2,28 @@ MAKEFLAGS += --no-print-directory
 
 FILE_EXT := cpp
 BUILD_DIR := build
-DEBUG_BUILD_DIR := debug
-
-CXX ?= clang++
+CXX ?= g++
 CXXFLAGS ?= -O2 -I. -fPIC
-DEBUG_FLAGS ?= -g -O0
-
 EXE ?= app
-DEBUG_EXE := $(DEBUG_BUILD_DIR)/$(EXE)
-
 FILES := $(wildcard *.$(FILE_EXT))
 SRC := $(notdir $(FILES))
 OBJS := $(patsubst %.$(FILE_EXT),$(BUILD_DIR)/%.o,$(SRC))
-DEBUG_OBJS := $(patsubst %.$(FILE_EXT),$(DEBUG_BUILD_DIR)/%.o,$(SRC))
 
-all: build $(EXE)
+main:
+	@$(CXX) -Llib.so main.cpp -o main
+	@./main
+	@rm -rf main
+
+main2:
+	@$(CXX) -I. main2.cpp wrapper.cpp lib.a -o main
+	@./main
+	@rm -rf main
 
 $(EXE): $(OBJS)
 	@$(CXX) $(OBJS) -o $@
 
 $(BUILD_DIR)/%.o: %.$(FILE_EXT) | build
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
-gdb: $(DEBUG_EXE)
-	@gdb $(DEBUG_EXE)
-	@$(MAKE) clean
-
-$(DEBUG_EXE): $(DEBUG_OBJS)
-	@$(CXX) $(DEBUG_OBJS) -o $@
-
-$(DEBUG_BUILD_DIR)/%.o: %.$(FILE_EXT) | build
-	@mkdir -p $(DEBUG_BUILD_DIR)
-	@$(CXX) $(DEBUG_FLAGS) -c $< -o $@
-
-build:
-	@mkdir -p $(BUILD_DIR)
-
-debug:
-	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DDEBUG_MODE"
-
-test:
-	@$(MAKE) run CXXFLAGS="$(CXXFLAGS) -DTEST_MODE -DDEBUG_MODE"
-
-execute: all
-	@./$(EXE)
-
-run: execute clean
 
 lib.a: $(OBJS)
 	@ar rcs $@ $(OBJS)
@@ -56,6 +32,3 @@ lib.a: $(OBJS)
 lib.so: $(OBJS)
 	@$(CXX) -shared -fPIC $(OBJS) -o $@
 	@$(MAKE) clean
-
-clean:
-	@rm -rf $(BUILD_DIR) $(DEBUG_BUILD_DIR) $(EXE)
