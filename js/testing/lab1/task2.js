@@ -9,41 +9,41 @@ const BROWSER_BIN = "/home/user/waterfox/waterfox";
 const TEST_MAIL = "test@mailinator.com";
 const TEST_PASS = "TEST123_123";
 
-const MY_ACCOUNT_ANCHOR_CLASS = "account";
-const EMAIL_FIELD_NAME = "Email";
-const PASSWORD_FIELD_NAME = "Password";
-const LOGIN_BTN_CLASS = "login-button";
-const ERROR_XPATH = "//div[@class='validation-summary-errors']/span";
+const EMAIL_FIELD = By.name('Email');
+const PASSWORD_FIELD = By.name('Password');
+const MY_ACCOUNT_ANCHOR = By.className('account');
+const LOGIN_BTN = By.className('login-button');
+const ERROR_MESSAGE = By.xpath('//div[@class="validation-summary-errors"]/span');
 
 const EXPECTED_OUTPUT = "Login was unsuccessful";
 
-async function task2() {
-    const opts = new firefox.Options();
-    opts.setBinary(BROWSER_BIN);
-    opts.addArguments('-private');
+const BROWSER_OPTIONS = new firefox.Options();
+BROWSER_OPTIONS.setBinary(BROWSER_BIN);
+BROWSER_OPTIONS.addArguments('-private');
 
+async function task2() {
     const driver = await new Builder()
         .forBrowser(BROWSER)
-        .setFirefoxOptions(opts)
+        .setFirefoxOptions(BROWSER_OPTIONS)
         .build();
 
     try {
         await driver.get(URL);
 
-        let myAccountAnchor = await driver.findElement(By.className(MY_ACCOUNT_ANCHOR_CLASS));
+        let myAccountAnchor = await driver.findElement(By.className(MY_ACCOUNT_ANCHOR));
         await myAccountAnchor.click();
 
-        let emailField = await driver.findElement(By.name(EMAIL_FIELD_NAME));
+        let emailField = await driver.findElement(By.name(EMAIL_FIELD));
         await emailField.sendKeys(TEST_MAIL);
 
-        let passwordField = await driver.findElement(By.name(PASSWORD_FIELD_NAME));
+        let passwordField = await driver.findElement(By.name(PASSWORD_FIELD));
         await passwordField.sendKeys(TEST_PASS);
 
-        let loginButton = await driver.findElement(By.className(LOGIN_BTN_CLASS));
+        let loginButton = await driver.findElement(By.className(LOGIN_BTN));
         await loginButton.click();
         
         let errorElement = await driver.wait(
-            until.elementLocated(By.xpath(ERROR_XPATH)), 
+            until.elementLocated(By.xpath(ERROR_MESSAGE)), 
             5000
         );
 
