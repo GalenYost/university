@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="lab1.ConfirmDialog"
+        Title="Підтвердження" Width="380" SizeToContent="Height" MaxWidth="440"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Так" Click="Yes_Click" Width="80" />
+            <Button Content="Ні" Click="No_Click" Width="80" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:n="using:NotaryApp"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="lab1.MainWindow"
+        Title="Нотаріальна контора" Width="900" Height="600">
+    <Grid RowDefinitions="Auto,*">
+        <TabControl Grid.Row="0">
+            <TabItem Header="Клієнти">
+                <Grid RowDefinitions="Auto,*">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="8">
+                        <Button Content="Додати" Click="AddClient_Click" />
+                        <Button Content="Змінити" Click="EditClient_Click" />
+                        <Button Content="Видалити" Click="DeleteClient_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="ClientsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" x:DataType="n:Client">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Код" Binding="{Binding Id}" Width="260" />
+                            <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="190" />
+                            <DataGridTextColumn Header="Вид діяльності" Binding="{Binding ActivityType}" Width="150" />
+                            <DataGridTextColumn Header="Адреса" Binding="{Binding Address}" Width="200" />
+                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="130" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Послуги">
+                <Grid RowDefinitions="Auto,*">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="8">
+                        <Button Content="Додати" Click="AddService_Click" />
+                        <Button Content="Змінити" Click="EditService_Click" />
+                        <Button Content="Видалити" Click="DeleteService_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="ServicesGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" x:DataType="n:Service">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Код" Binding="{Binding Id}" Width="260" />
+                            <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="240" />
+                            <DataGridTextColumn Header="Опис" Binding="{Binding Description}" Width="320" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Угоди">
+                <Grid RowDefinitions="Auto,*">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="8">
+                        <Button Content="Додати" Click="AddDeal_Click" />
+                        <Button Content="Змінити" Click="EditDeal_Click" />
+                        <Button Content="Видалити" Click="DeleteDeal_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="DealsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" x:DataType="n:Deal">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Рег. номер" Binding="{Binding Id}" Width="250" />
+                            <DataGridTextColumn Header="Клієнт" Binding="{Binding Client.Name}" Width="160" />
+                            <DataGridTextColumn Header="Послуга" Binding="{Binding Service.Name}" Width="160" />
+                            <DataGridTextColumn Header="Сума" Binding="{Binding Amount}" Width="100" />
+                            <DataGridTextColumn Header="Комісійні" Binding="{Binding Commission}" Width="100" />
+                            <DataGridTextColumn Header="Опис" Binding="{Binding Description}" Width="200" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Запити">
+                <Grid RowDefinitions="Auto,*">
+                    <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="8,8,8,4">
+                        <Button Content="1. Клієнти по алфавіту" Click="RunQuery_Click" Tag="0" Margin="0,0,8,4" />
+                        <Button Content="2. Угоди понад 10000" Click="RunQuery_Click" Tag="1" Margin="0,0,8,4" />
+                        <Button Content="3. Угоди: клієнт і послуга" Click="RunQuery_Click" Tag="2" Margin="0,0,8,4" />
+                        <Button Content="4. Дохід по клієнту" Click="RunQuery_Click" Tag="3" Margin="0,0,8,4" />
+                        <Button Content="5. Клієнти «ТОВ»" Click="RunQuery_Click" Tag="4" Margin="0,0,8,4" />
+                    </WrapPanel>
+                    <DataGrid x:Name="QueryResultGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" />
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+
+        <TextBlock x:Name="Status" Grid.Row="1" Margin="8,4" TextWrapping="Wrap" />
+    </Grid>
+</Window>
