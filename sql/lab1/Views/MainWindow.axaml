@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:n="using:NotaryApp"
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
-        x:Class="lab1.MainWindow"
+        x:Class="lab1.Views.MainWindow"
         Title="Нотаріальна контора" Width="900" Height="600">
     <Grid RowDefinitions="Auto,*">
         <TabControl Grid.Row="0">
@@ -65,15 +65,25 @@
             </TabItem>
 
             <TabItem Header="Запити">
-                <Grid RowDefinitions="Auto,*">
+                <Grid RowDefinitions="Auto,Auto,*">
                     <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="8,8,8,4">
                         <Button Content="1. Клієнти по алфавіту" Click="RunQuery_Click" Tag="0" Margin="0,0,8,4" />
                         <Button Content="2. Угоди понад 10000" Click="RunQuery_Click" Tag="1" Margin="0,0,8,4" />
                         <Button Content="3. Угоди: клієнт і послуга" Click="RunQuery_Click" Tag="2" Margin="0,0,8,4" />
                         <Button Content="4. Дохід по клієнту" Click="RunQuery_Click" Tag="3" Margin="0,0,8,4" />
                         <Button Content="5. Клієнти «ТОВ»" Click="RunQuery_Click" Tag="4" Margin="0,0,8,4" />
+                        <Button Content="6. Усі послуги" Click="RunQuery_Click" Tag="5" Margin="0,0,8,4" />
+                        <Button Content="7. Перші 5 послуг" Click="RunQuery_Click" Tag="6" Margin="0,0,8,4" />
+                        <Button Content="8. Без виду діяльності" Click="RunQuery_Click" Tag="7" Margin="0,0,8,4" />
+                        <Button Content="9. Сума 5000" Click="RunQuery_Click" Tag="8" Margin="0,0,8,4" />
+                        <Button Content="10. Комісійні понад 500" Click="RunQuery_Click" Tag="9" Margin="0,0,8,4" />
+                        <Button Content="11. Найбільша сума" Click="RunQuery_Click" Tag="10" Margin="0,0,8,4" />
+                        <Button Content="12. Угоди з клієнтом" Click="RunQuery_Click" Tag="11" Margin="0,0,8,4" />
                     </WrapPanel>
-                    <DataGrid x:Name="QueryResultGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" />
+                    <TextBox x:Name="QuerySqlBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                             TextWrapping="NoWrap" FontFamily="monospace"
+                             Margin="8,0,8,4" MinHeight="56" MaxHeight="90" />
+                    <DataGrid x:Name="QueryResultGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" Margin="8" />
                 </Grid>
             </TabItem>
 

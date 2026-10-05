@@ -37,7 +37,7 @@ public class AppDbContext : DbContext {
     public DbSet<Deal> Deals { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-        var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "твої_пароль";
+        var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
         optionsBuilder
             .UseNpgsql($"Host=localhost;Database=db_lab1;Username=postgres;Password={password}")
             .UseSnakeCaseNamingConvention();

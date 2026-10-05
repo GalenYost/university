@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="lab1.ConfirmDialog"
+        x:Class="lab1.Views.Dialogs.ConfirmDialog"
         Title="Підтвердження" Width="380" SizeToContent="Height" MaxWidth="440"
         WindowStartupLocation="CenterOwner">
     <StackPanel Margin="16" Spacing="12">

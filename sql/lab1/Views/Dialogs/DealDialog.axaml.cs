@@ -5,7 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using NotaryApp;
 
-namespace lab1;
+namespace lab1.Views.Dialogs;
 
 public partial class DealDialog : Window {
     private readonly Deal? _deal;

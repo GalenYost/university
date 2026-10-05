@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
-namespace lab1;
+namespace lab1.Views.Dialogs;
 
 public partial class ConfirmDialog : Window {
     public ConfirmDialog(string message) {

@@ -1,13 +1,17 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="lab1.ServiceDialog"
-        Title="Послуга" Width="420" SizeToContent="Height"
+        x:Class="lab1.Views.Dialogs.ClientDialog"
+        Title="Клієнт" Width="420" SizeToContent="Height"
         WindowStartupLocation="CenterOwner">
     <StackPanel Margin="16" Spacing="8">
         <TextBlock Text="Назва" />
         <TextBox x:Name="NameBox" />
-        <TextBlock Text="Опис" />
-        <TextBox x:Name="DescriptionBox" />
+        <TextBlock Text="Вид діяльності" />
+        <TextBox x:Name="ActivityBox" />
+        <TextBlock Text="Адреса" />
+        <TextBox x:Name="AddressBox" />
+        <TextBlock Text="Телефон" />
+        <TextBox x:Name="PhoneBox" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
             <Button Content="ОК" Click="Ok_Click" Width="90" />

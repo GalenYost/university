@@ -1,15 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Interactivity;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
+using lab1.Services;
+using lab1.Views.Dialogs;
 using NotaryApp;
 
-namespace lab1;
+namespace lab1.Views;
 
 public partial class MainWindow : Window {
     private readonly AppDbContext _db = new();
@@ -150,62 +150,28 @@ public partial class MainWindow : Window {
         SaveAndRefresh("Угоду видалено.");
     }
 
-    private static readonly (string Label, string Sql)[] _queries = {
-        ("1. Клієнти по алфавіту", "SELECT name, activity_type, address, phone FROM clients ORDER BY name;"),
-        ("2. Угоди понад 10000", "SELECT amount, commission FROM deals WHERE amount > 10000.00 ORDER BY amount DESC;"),
-        ("3. Угоди: клієнт і послуга",
-         "SELECT d.id, c.name AS client_name, s.name AS service_name, d.amount, d.commission " +
-         "FROM deals d JOIN clients c ON c.id = d.client_id " +
-         "JOIN services s ON s.id = d.service_id ORDER BY d.id;"),
-        ("4. Дохід по клієнту",
-         "SELECT c.name, COUNT(d.id) AS deal_count, SUM(d.commission) AS total_commission " +
-         "FROM clients c LEFT JOIN deals d ON d.client_id = c.id " +
-         "GROUP BY c.id, c.name HAVING SUM(d.commission) IS NOT NULL ORDER BY total_commission DESC;"),
-        ("5. Клієнти «ТОВ»", "SELECT id, name, phone FROM clients WHERE name LIKE '%ТОВ%';"),
-    };
-
-    private sealed class QueryResultRow {
-        public object?[] Values { get; }
-        public QueryResultRow(object?[] values) => Values = values;
-    }
-
     private void RunQuery_Click(object? sender, RoutedEventArgs e) {
-        if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out var idx) || idx < 0 || idx >= _queries.Length) return;
-        var (label, sql) = _queries[idx];
+        if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out var idx)) return;
+        if (idx < 0 || idx >= ReportQuery.All.Length) return;
+        var query = ReportQuery.All[idx];
 
+        QuerySqlBox.Text = query.Sql;
         QueryResultGrid.ItemsSource = null;
         QueryResultGrid.Columns.Clear();
 
         try {
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            conn.Open();
-            try {
-                using var cmd = new NpgsqlCommand(sql, conn);
-                using var reader = cmd.ExecuteReader();
+            var result = QueryExecutor.Execute(_db, query.Sql);
 
-                var headers = new List<string>();
-                for (var i = 0; i < reader.FieldCount; i++) headers.Add(reader.GetName(i));
-
-                foreach (var h in headers) {
-                    QueryResultGrid.Columns.Add(new DataGridTextColumn {
-                        Header = h,
-                        Binding = new Binding($"Values[{QueryResultGrid.Columns.Count}]"),
-                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
-                    });
-                }
-
-                var rows = new List<QueryResultRow>();
-                while (reader.Read()) {
-                    var vals = new object?[reader.FieldCount];
-                    for (var i = 0; i < vals.Length; i++) vals[i] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                    rows.Add(new QueryResultRow(vals));
-                }
-
-                QueryResultGrid.ItemsSource = rows;
-                Status.Text = label + $" — знайдено рядків: {rows.Count}.";
-            } finally {
-                conn.Close();
+            for (var i = 0; i < result.Headers.Count; i++) {
+                QueryResultGrid.Columns.Add(new DataGridTextColumn {
+                    Header = result.Headers[i],
+                    Binding = new Binding($"Values[{i}]"),
+                    Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                });
             }
+
+            QueryResultGrid.ItemsSource = result.Rows;
+            Status.Text = $"{query.Title} — знайдено рядків: {result.Rows.Count}.";
         } catch (Exception ex) {
             Status.Text = "Помилка запиту: " + ex.Message;
         }

@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using NotaryApp;
 
-namespace lab1;
+namespace lab1.Views.Dialogs;
 
 public partial class ClientDialog : Window {
     public Client Result { get; }
