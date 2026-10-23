@@ -5,18 +5,35 @@ use input::{InputBuffer, read_as, read_until};
 use std::cell::RefCell;
 use std::rc::Rc;
 
+pub(crate) fn max_level_mode_log(p: f64, len: usize) -> usize {
+    if len <= 1 {
+        return 1;
+    }
+
+    let base = if p > 0.0 && p < 1.0 {
+        1.0 / p
+    } else {
+        std::process::exit(0);
+    };
+
+    let max_lvl = (len as f64).log(base).ceil() as usize;
+    max_lvl.max(1)
+}
+
 fn create_list() -> list::SkipList<i32, i32> {
     println!("------------");
     println!("Format:\n- deterministic/d\n- random/r");
     let list_level_mode = read_until::<list::LevelMode>("Mode: ");
 
     println!("------------");
-    println!("Format:\n- constant(value)/c(value)\n- unlimited/u");
+    println!("Format:\n- constant(value)/c(value)\n- unlimited/u\n- log/l");
     let max_level_mode = read_until::<list::MaxLevelMode>("Max Level Mode: ");
 
-    println!("------------");
-    println!("Format:\n0.98");
-    let probability = read_until::<f64>("Probability: ");
+    let probability = if list_level_mode == list::LevelMode::Random {
+        println!("------------");
+        println!("Format:\n0.98\n0 < p < 1");
+        read_until::<f64>("Probability: ")
+    } else { 0.0 };
 
     list::SkipList::<i32, i32>::new(list_level_mode, max_level_mode, probability)
 }

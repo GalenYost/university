@@ -73,7 +73,11 @@ impl FromStr for MaxLevelMode {
             return Ok(Self::Constant(n));
         }
 
-        Err(format!("expected 'constant(<number>)' or 'unlimited', got '{s}'"))
+        if s.eq_ignore_ascii_case("log") || s.eq_ignore_ascii_case("l") {
+            return Ok(Self::Function(crate::max_level_mode_log));
+        }
+
+        Err(format!("expected 'constant(<number>)', 'unlimited', or 'log', got '{s}'"))
     }
 }
 
@@ -112,7 +116,7 @@ impl<K, V> SkipList<K, V> {
             current_level: 1,
             insert_counter: 1,
             probability,
-            rng_state: 0x12345678,
+            rng_state: 0x1,
             level_mode,
             max_level_mode,
         }
@@ -398,7 +402,7 @@ where
 
             let labels: Vec<String> = columns.iter().map(|&n| format!("{}", &*n)).collect();
             let widths: Vec<usize> = labels.iter().map(|s| s.len()).collect();
-            let prefix_width = format!("L{}:", self.current_level.saturating_sub(1)).len();
+            let prefix_width = format!("{}:", self.current_level.saturating_sub(1)).len();
 
             for level in (0..self.current_level).rev() {
                 let mut next = (&(*self.head).forward)[level];
@@ -416,12 +420,13 @@ where
                 writeln!(
                     f,
                     "{:width$} {}",
-                    format!("L{level}:"),
+                    format!("{level}:"),
                     cells.join(" -> "),
                     width = prefix_width
                 )?;
             }
         }
+        writeln!(f, "{}", self.current_level);
         Ok(())
     }
 }
