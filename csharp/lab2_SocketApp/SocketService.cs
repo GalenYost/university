@@ -41,20 +41,31 @@ public class SocketService {
         while (_stream != null) {
             try {
                 int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
-                if (bytesRead == 0) break;
+                if (bytesRead == 0) {
+                    onMessageReceived("[System] Client closed connection.");
+                    break;
+                };
 
                 string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 onMessageReceived(message);
-            }
-            catch {
+            } catch {
+                onMessageReceived("[System] connection lost.");
                 break;
             }
         }
     }
 
     public void Stop() {
-        _stream?.Close();
-        _client?.Close();
-        _listener?.Stop();
+        try {
+            _stream?.Close();
+            _client?.Close();
+            _listener?.Stop();
+        } catch {
+            break;
+        } finally {
+            _stream = null;
+            _client = null;
+            _listener = null;
+        }
     }
 }

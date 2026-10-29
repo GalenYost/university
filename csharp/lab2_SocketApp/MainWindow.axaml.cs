@@ -55,7 +55,7 @@ public partial class MainWindow : Window {
         StatusText.Text = "Status: Awaiting connection...";
         
         await _socketService.StartServerAsync(port, OnMessageReceived);
-        StatusText.Text = "Status: Client connected";
+        StatusText.Text = "Status: Server started";
     }
 
     private async void OnConnectClientClick(object? sender, RoutedEventArgs e) {
