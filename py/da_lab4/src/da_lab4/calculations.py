@@ -2,8 +2,6 @@ import math
 import random
 import scipy.stats as st
 
-# Таблиця В.1 з методичних вказівок: Критичні значення T_крит для критерію знакових рангів Вілкоксона
-# для alpha = 0.05 та двосторонньої альтернативи залежно від N'
 WILCOXON_CRITICAL_TABLE_005 = {
     5: None, 6: 0, 7: 2, 8: 3, 9: 5, 10: 8,
     11: 10, 12: 13, 13: 17, 14: 21, 15: 25, 16: 29,
@@ -15,11 +13,27 @@ WILCOXON_CRITICAL_TABLE_005 = {
     47: 378, 48: 396, 49: 415, 50: 434
 }
 
+def get_wilcoxon_critical_value(n_r: int, alpha: float) -> int | None:
+    if abs(alpha - 0.05) < 1e-4 and n_r in WILCOXON_CRITICAL_TABLE_005:
+        return WILCOXON_CRITICAL_TABLE_005[n_r]
+    try:
+        from scipy.stats._wilcoxon import WilcoxonDistribution
+        dist = WilcoxonDistribution(n_r)
+        max_t = n_r * (n_r + 1) // 4
+        crit = None
+        for t in range(max_t + 1):
+            if 2.0 * float(dist.cdf(t)) <= alpha + 1e-9:
+                crit = t
+            else:
+                break
+        return crit
+    except Exception:
+        return WILCOXON_CRITICAL_TABLE_005.get(n_r, None)
+
 def parse_paired_line(line: str) -> tuple[float, float] | None:
     line = line.strip()
     if not line or line.startswith("#"):
         return None
-    # 1. Розділювач крапка з комою ';'
     if ";" in line:
         parts = [p.strip().replace(",", ".") for p in line.split(";") if p.strip()]
         if len(parts) >= 2:
@@ -27,7 +41,6 @@ def parse_paired_line(line: str) -> tuple[float, float] | None:
                 return float(parts[0]), float(parts[1])
             except ValueError:
                 pass
-    # 2. Розділювач таб '\t'
     if "\t" in line:
         parts = [p.strip().replace(",", ".") for p in line.split("\t") if p.strip()]
         if len(parts) >= 2:
@@ -35,7 +48,6 @@ def parse_paired_line(line: str) -> tuple[float, float] | None:
                 return float(parts[0]), float(parts[1])
             except ValueError:
                 pass
-    # 3. Кома як розділювач стовпців при наявності десяткових крапок (CSV: "8.5, 9.6")
     if "," in line and "." in line:
         parts = [p.strip() for p in line.split(",") if p.strip()]
         if len(parts) >= 2:
@@ -43,7 +55,6 @@ def parse_paired_line(line: str) -> tuple[float, float] | None:
                 return float(parts[0]), float(parts[1])
             except ValueError:
                 pass
-    # 4. Розділювач пробіл
     tokens = line.split()
     if len(tokens) == 2:
         clean_tokens = [t.rstrip(",;").replace(",", ".") for t in tokens]
@@ -51,7 +62,6 @@ def parse_paired_line(line: str) -> tuple[float, float] | None:
             return float(clean_tokens[0]), float(clean_tokens[1])
         except ValueError:
             pass
-    # 5. Кома без десяткових крапок (наприклад "10, 20")
     if "," in line:
         parts = [p.strip() for p in line.split(",") if p.strip()]
         if len(parts) == 2:
@@ -70,12 +80,12 @@ def load_paired_dataset(file_path: str) -> tuple[list[float], list[float]]:
                 x.append(pair[0])
                 y.append(pair[1])
     if not x:
-        raise ValueError("Файл не містить числових даних або неправильний формат (очікується 2 стовпці).")
+        raise ValueError("File does not contain valid numerical data (expected 2 columns).")
     return x, y
 
 def compute_differences(x: list[float], y: list[float]) -> list[float]:
     if len(x) != len(y):
-        raise ValueError("Розміри вибірок не співпадають.")
+        raise ValueError("Sample sizes must be equal.")
     return [round(a - b, 9) for a, b in zip(x, y)]
 
 def calculate_sturges_bins(n: int) -> int:
@@ -105,7 +115,7 @@ def build_histogram_data(data: list[float], num_bins: int) -> list[dict]:
 def calculate_base_statistics(data: list[float]) -> dict:
     n = len(data)
     if n == 0:
-        raise ValueError("Вибірка порожня.")
+        raise ValueError("Sample is empty.")
     mean = sum(data) / n
     sorted_data = sorted(data)
     median = sorted_data[n // 2] if n % 2 != 0 else (sorted_data[n // 2 - 1] + sorted_data[n // 2]) / 2.0
@@ -156,18 +166,15 @@ def calculate_confidence_intervals(data: list[float], stats: dict, confidence_le
     u_val = float(st.norm.ppf(1 - alpha / 2))
     t_val = float(st.t.ppf(1 - alpha / 2, df=n - 1))
     
-    # CI для середнього (Стьюдент)
     se_mean = stats["s_unbias"] / math.sqrt(n)
     mean_ci = (stats["mean"] - t_val * se_mean, stats["mean"] + t_val * se_mean)
     
-    # CI для медіани (ранговий метод)
     j_val = (n / 2.0) - u_val * (math.sqrt(n) / 2.0)
     k_val = (n / 2.0) + 1.0 + u_val * (math.sqrt(n) / 2.0)
     j_idx = max(0, min(n - 1, int(round(j_val)) - 1))
     k_idx = max(0, min(n - 1, int(round(k_val)) - 1))
     median_ci = (sorted_data[j_idx], sorted_data[k_idx])
     
-    # CI для СКВ (хі-квадрат)
     if stats["s_unbias"] < 1e-12:
         s_ci = (0.0, 0.0)
     else:
@@ -176,7 +183,6 @@ def calculate_confidence_intervals(data: list[float], stats: dict, confidence_le
         s_sq_sum = (n - 1) * (stats["s_unbias"] ** 2)
         s_ci = (math.sqrt(s_sq_sum / chi2_lower), math.sqrt(s_sq_sum / chi2_upper))
     
-    # CI для асиметрії та ексцесу
     if n >= 4 and stats["s_unbias"] >= 1e-12:
         se_skew = math.sqrt((6.0 * n * (n - 1)) / ((n - 2) * (n + 1) * (n + 3)))
         skew_ci = (stats["skewness_a2"] - u_val * se_skew, stats["skewness_a2"] + u_val * se_skew)
@@ -227,24 +233,16 @@ def calculate_bootstrap_intervals(data: list[float], confidence_level: float = 0
     }
 
 def compute_ranks(values: list[float]) -> list[float]:
-    """
-    Власна реалізація розрахунку рангів (Таблиця 9 методичних вказівок).
-    Ранг - це порядковий номер у впорядкованій за зростанням вибірці.
-    Якщо є однакові елементи (в'язки), ранг дорівнює їх середньому арифметичному.
-    """
     if not values:
         return []
-    # Зберігаємо індекси елементів
     indexed = sorted(enumerate(values), key=lambda item: item[1])
     ranks = [0.0] * len(values)
     i = 0
     n = len(indexed)
     while i < n:
         j = i
-        # Знаходимо групу однакових значень (в'язку)
         while j + 1 < n and abs(indexed[j + 1][1] - indexed[i][1]) < 1e-9:
             j += 1
-        # Порядкові номери від (i + 1) до (j + 1)
         avg_rank = (i + 1 + j + 1) / 2.0
         for k in range(i, j + 1):
             ranks[indexed[k][0]] = avg_rank
@@ -252,14 +250,11 @@ def compute_ranks(values: list[float]) -> list[float]:
     return ranks
 
 def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
-    """
-    Власна реалізація парного t-критерію Стьюдента за розділом 2 методичних вказівок.
-    """
     if len(x) != len(y):
-        raise ValueError("Вибірки повинні мати однаковий розмір.")
+        raise ValueError("Sample sizes must be equal.")
     n = len(x)
     if n < 2:
-        raise ValueError("Для парного t-критерію потрібно щонайменше 2 спостереження.")
+        raise ValueError("Paired t-test requires at least 2 observations.")
     
     diffs = [round(a - b, 9) for a, b in zip(x, y)]
     mean_diff = sum(diffs) / n
@@ -267,7 +262,6 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
     df = n - 1
     t_crit = float(st.t.ppf(1 - alpha / 2, df=df))
     
-    # Формування допоміжних даних для Таблиці 11
     table_rows = []
     for i in range(n):
         dev = diffs[i] - mean_diff
@@ -281,7 +275,6 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
             "dev_sq": dev_sq
         })
 
-    # Випадок, коли вибірки повністю збігаються
     if sum_sq_diff < 1e-12:
         if abs(mean_diff) < 1e-12:
             return {
@@ -298,7 +291,7 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
                 "is_identical": True,
                 "is_significant": False,
                 "table_rows": table_rows,
-                "conclusion": "Вибірки повністю збігаються (всі d_i = 0). H0 не відхиляється (p = 1.0000 >= alpha)."
+                "conclusion": "Samples are completely identical (all differences are 0). Fail to reject H0 (p = 1.0000 >= alpha)."
             }
         else:
             return {
@@ -315,7 +308,7 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
                 "is_identical": False,
                 "is_significant": True,
                 "table_rows": table_rows,
-                "conclusion": "Дисперсія різниць дорівнює 0 при ненульовій різниці. Різниця константна і статистично значуща."
+                "conclusion": "Difference variance is 0 with non-zero mean. Reject H0 (difference is constant and significant)."
             }
 
     sd_diff = math.sqrt(sum_sq_diff / (n - 1))
@@ -326,13 +319,13 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
     
     if is_significant:
         conclusion = (
-            f"Нульова гіпотеза H0 відхиляється (|t| = {abs(t_stat):.4f} > t_crit = {t_crit:.4f}, p = {p_value:.4f} < {alpha}). "
-            f"Середні значення сукупностей істотно відрізняються."
+            f"Reject H0 (|t| = {abs(t_stat):.4f} > t_crit = {t_crit:.4f}, p = {p_value:.4f} < {alpha}). "
+            f"The difference between sample means is statistically significant."
         )
     else:
         conclusion = (
-            f"Немає підстав відхиляти нульову гіпотезу H0 (|t| = {abs(t_stat):.4f} <= t_crit = {t_crit:.4f}, p = {p_value:.4f} >= {alpha}). "
-            f"Середні значення сукупностей можна вважати рівними."
+            f"Fail to reject H0 (|t| = {abs(t_stat):.4f} <= t_crit = {t_crit:.4f}, p = {p_value:.4f} >= {alpha}). "
+            f"Sample means can be considered equal (difference is not significant)."
         )
 
     return {
@@ -353,16 +346,11 @@ def paired_t_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
     }
 
 def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.05) -> dict:
-    """
-    Власна реалізація критерію знакових рангів Вілкоксона за розділом 3 методичних вказівок.
-    Використовує власну функцію compute_ranks.
-    """
     if len(x) != len(y):
-        raise ValueError("Вибірки повинні мати однаковий розмір.")
+        raise ValueError("Sample sizes must be equal.")
     n_total = len(x)
     diffs = [round(a - b, 9) for a, b in zip(x, y)]
     
-    # 2. Якщо серед елементів є нульові, їх вилучають. N' - кількість ненульових різниць.
     non_zero = [(d, i) for i, d in enumerate(diffs) if abs(d) > 1e-9]
     n_r = len(non_zero)
     
@@ -370,8 +358,8 @@ def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.0
         return {
             "n_total": n_total,
             "n_nonzero": 0,
-            "w_plus": 0.0,
-            "w_minus": 0.0,
+            "t_plus": 0.0,
+            "t_minus": 0.0,
             "t_stat": 0.0,
             "t_crit_table": None,
             "u_stat": 0.0,
@@ -383,16 +371,12 @@ def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.0
             "is_significant": False,
             "table_rows": [],
             "table_ranking": [],
-            "conclusion": "Вибірки повністю збігаються (всі d_i = 0). H0 не відхиляється."
+            "conclusion": "Samples are completely identical (all d_i = 0). Fail to reject H0."
         }
 
-    # 3. Переходять до абсолютних значень різниць
     abs_diffs = [abs(item[0]) for item in non_zero]
-    
-    # 4. Присвоюють ранги r_i
     ranks = compute_ranks(abs_diffs)
     
-    # 5. Суми рангів позитивних та негативних різниць
     t_plus = 0.0
     t_minus = 0.0
     table_rows = []
@@ -415,10 +399,8 @@ def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.0
             "r_neg": r_neg
         })
 
-    # T = min(T+, T-)
     t_stat = min(t_plus, t_minus)
     
-    # Таблиця 13 (визначення рангів для |d_i|)
     sorted_pairs = sorted(zip(abs_diffs, ranks), key=lambda p: p[0])
     table_ranking = []
     for rank_idx, (abs_val, r) in enumerate(sorted_pairs, start=1):
@@ -428,10 +410,8 @@ def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.0
             "rank": r
         })
 
-    # Математичне сподівання та дисперсія за методичкою
     e_t = (n_r * (n_r + 1)) / 4.0
     
-    # В'язки для дисперсії: sum A_j(A_j - 1)(A_j + 1)
     tie_counts = {}
     for r in ranks:
         tie_counts[r] = tie_counts.get(r, 0) + 1
@@ -440,49 +420,43 @@ def wilcoxon_signed_rank_test(x: list[float], y: list[float], alpha: float = 0.0
     d_t = (n_r * (n_r + 1) * (2 * n_r + 1)) / 24.0 - (tie_term / 48.0)
     std_t = math.sqrt(max(1e-9, d_t))
     
-    # Стандартизована статистика u = (T - E{T}) / sqrt(D{T})
     u_stat = (t_stat - e_t) / std_t
     u_crit = float(st.norm.ppf(1 - alpha / 2))
     p_value_norm = float(2.0 * (1.0 - st.norm.cdf(abs(u_stat))))
     
-    # Точне p-значення за scipy для порівняння
     try:
         scipy_w = st.wilcoxon([item[0] for item in non_zero])
         p_value_exact = float(scipy_w.pvalue)
     except Exception:
         p_value_exact = p_value_norm
 
-    # Табличне критичне значення T_крит (для alpha=0.05)
-    t_crit_table = WILCOXON_CRITICAL_TABLE_005.get(n_r, None)
+    t_crit_table = get_wilcoxon_critical_value(n_r, alpha)
     
-    # Висновок за методичкою:
-    # Для N' <= 15 порівнюють T з T_крит (якщо alpha == 0.05)
-    if n_r <= 15 and t_crit_table is not None and abs(alpha - 0.05) < 1e-4:
+    if n_r <= 15 and t_crit_table is not None:
         if t_stat > t_crit_table:
             is_significant = False
             conclusion = (
-                f"Немає підстав відхиляти нульову гіпотезу H0 (T = {t_stat:.1f} > T_крит = {t_crit_table}, N' = {n_r}). "
-                f"Систематичного зсуву між розподілами немає, центральні тенденції можна вважати однаковими."
+                f"Fail to reject H0 (T = {t_stat:.1f} > T_crit = {t_crit_table}, N' = {n_r}). "
+                f"No systematic shift between distributions; central tendencies can be considered equal."
             )
         else:
             is_significant = True
             conclusion = (
-                f"Нульова гіпотеза H0 відхиляється (T = {t_stat:.1f} <= T_крит = {t_crit_table}, N' = {n_r}). "
-                f"Є систематичний зсув між розподілами, центральні тенденції розподілів різняться."
+                f"Reject H0 (T = {t_stat:.1f} <= T_crit = {t_crit_table}, N' = {n_r}). "
+                f"Statistically significant systematic shift detected between distributions."
             )
     else:
-        # За нормальним наближенням (u-статистика або p-значення)
         if p_value_norm < alpha or abs(u_stat) > u_crit:
             is_significant = True
             conclusion = (
-                f"Нульова гіпотеза H0 відхиляється (|u| = {abs(u_stat):.2f} > u_crit = {u_crit:.2f}, p = {p_value_norm:.4f} < {alpha}). "
-                f"Є систематичний зсув між розподілами, центральні тенденції розподілів різняться."
+                f"Reject H0 (|u| = {abs(u_stat):.2f} > u_crit = {u_crit:.2f}, p = {p_value_norm:.4f} < {alpha}). "
+                f"Statistically significant systematic shift detected between distributions."
             )
         else:
             is_significant = False
             conclusion = (
-                f"Немає підстав відхиляти нульову гіпотезу H0 (|u| = {abs(u_stat):.2f} <= u_crit = {u_crit:.2f}, p = {p_value_norm:.4f} >= {alpha}). "
-                f"Систематичного зсуву між розподілами немає, центральні тенденції можна вважати однаковими."
+                f"Fail to reject H0 (|u| = {abs(u_stat):.2f} <= u_crit = {u_crit:.2f}, p = {p_value_norm:.4f} >= {alpha}). "
+                f"No systematic shift between distributions; central tendencies can be considered equal."
             )
 
     return {
@@ -515,17 +489,17 @@ def check_normality(data: list[float], alpha: float = 0.05) -> list[dict]:
         w_stat, p_val = st.shapiro(data)
         is_norm = p_val >= alpha
         results.append({
-            "test": "Критерій Шапіро-Вілка",
+            "test": "Shapiro-Wilk Test",
             "stat": f"W = {w_stat:.4f}",
             "crit": f"p = {p_val:.4g}",
-            "conclusion": "Нормальний" if is_norm else "Не є нормальним (відхилення)",
+            "conclusion": "Normal" if is_norm else "Not Normal",
             "is_normal": is_norm
         })
     else:
         results.append({
-            "test": "Критерій Шапіро-Вілка",
+            "test": "Shapiro-Wilk Test",
             "stat": "N/A", "crit": "N/A",
-            "conclusion": "Замало даних (n < 3)", "is_normal": False
+            "conclusion": "Insufficient data (n < 3)", "is_normal": False
         })
     
     if n >= 4:
@@ -541,17 +515,17 @@ def check_normality(data: list[float], alpha: float = 0.05) -> list[dict]:
             is_norm_e = abs(u_e) <= u_crit
             
             results.append({
-                "test": "Критерій асиметрії (|u_A| <= u_crit)",
+                "test": "Skewness Test (|u_A| <= u_crit)",
                 "stat": f"u_A = {u_a:.4f}",
                 "crit": f"u_crit = {u_crit:.4f}",
-                "conclusion": "Нормальний" if is_norm_a else "Не є нормальним",
+                "conclusion": "Normal" if is_norm_a else "Not Normal",
                 "is_normal": is_norm_a
             })
             results.append({
-                "test": "Критерій ексцесу (|u_E| <= u_crit)",
+                "test": "Kurtosis Test (|u_E| <= u_crit)",
                 "stat": f"u_E = {u_e:.4f}",
                 "crit": f"u_crit = {u_crit:.4f}",
-                "conclusion": "Нормальний" if is_norm_e else "Не є нормальним",
+                "conclusion": "Normal" if is_norm_e else "Not Normal",
                 "is_normal": is_norm_e
             })
     return results
@@ -565,23 +539,23 @@ def analyze_central_tendencies(stats_diff: dict, ci_diff: dict, confidence_level
     pct = int(round(confidence_level * 100))
     
     lines = [
-        f"• Середнє значення різниць: d̄ = {stats_diff['mean']:.4f}, {pct}% ДІ: [{mean_ci[0]:.4f}; {mean_ci[1]:.4f}]",
-        f"• Медіана різниць: Me = {stats_diff['median']:.4f}, {pct}% ДІ: [{median_ci[0]:.4f}; {median_ci[1]:.4f}]"
+        f"• Mean difference: d̄ = {stats_diff['mean']:.4f}, {pct}% CI: [{mean_ci[0]:.4f}; {mean_ci[1]:.4f}]",
+        f"• Median difference: Me = {stats_diff['median']:.4f}, {pct}% CI: [{median_ci[0]:.4f}; {median_ci[1]:.4f}]"
     ]
     
     if mean_has_zero and median_has_zero:
         lines.append(
-            "• Висновок: Обидва довірчі інтервали (для середнього та медіани) МІСТЯТЬ нуль (0). "
-            "Це є попереднім свідченням близькості центральних тенденцій двох вибірок (відсутність статистично відчутної систематичної переваги жодної з вибірок)."
+            "• Conclusion: Both confidence intervals (mean and median) CONTAIN 0. "
+            "This suggests that the central tendencies of both samples are close (no apparent systematic difference)."
         )
     elif mean_has_zero or median_has_zero:
         lines.append(
-            "• Висновок: Один із довірчих інтервалів містить 0, а інший — ні. "
-            "Це вказує на помітну асиметрію різниць та наявність можливих викидів. Остаточне рішення слід приймати за непараметричним критерієм."
+            "• Conclusion: One confidence interval contains 0 while the other does not. "
+            "This indicates possible skewness or outliers in differences; formal test results should be prioritized."
         )
     else:
         lines.append(
-            "• Висновок: Жоден із довірчих інтервалів НЕ містить нуль (0). "
-            "Це є свідченням наявності систематичного зсуву між вибірками."
+            "• Conclusion: Neither confidence interval contains 0. "
+            "This indicates a significant systematic shift between the samples."
         )
     return "\n".join(lines)
